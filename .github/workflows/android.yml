@@ -41,12 +41,7 @@ jobs:
       - name: Set up Android SDK, NDK 26.3.11579264 & CMake 3.22.1
         uses: android-actions/setup-android@v3
         with:
-          packages: |
-            platform-tools
-            platforms;android-34
-            build-tools;34.0.0
-            ndk;26.3.11579264
-            cmake;3.22.1
+          packages: 'platform-tools platforms;android-34 build-tools;34.0.0 ndk;26.3.11579264 cmake;3.22.1'
 
       - name: Configure Android SDK, NDK & CMake Environment Variables
         run: |
@@ -55,6 +50,23 @@ jobs:
           NDK_DIR="${SDK_ROOT}/ndk/${ANDROID_NDK_VERSION}"
           CMAKE_DIR="${SDK_ROOT}/cmake/${ANDROID_CMAKE_VERSION}"
           BUILD_TOOLS_DIR="${SDK_ROOT}/build-tools/${ANDROID_BUILD_TOOLS_VERSION}"
+
+          SDKMANAGER_BIN="$(command -v sdkmanager || find "${SDK_ROOT}/cmdline-tools" -maxdepth 3 -name sdkmanager -type f 2>/dev/null | head -n 1 || true)"
+          if [[ -n "${SDKMANAGER_BIN}" ]]; then
+            set +o pipefail
+            yes | "${SDKMANAGER_BIN}" --licenses >/dev/null 2>&1 || true
+            set -o pipefail
+
+            MISSING_PKGS=()
+            [[ -d "${SDK_ROOT}/platforms/android-${ANDROID_COMPILE_SDK}" ]] || MISSING_PKGS+=("platforms;android-${ANDROID_COMPILE_SDK}")
+            [[ -f "${NDK_DIR}/source.properties" ]] || MISSING_PKGS+=("ndk;${ANDROID_NDK_VERSION}")
+            [[ -x "${CMAKE_DIR}/bin/cmake" ]] || MISSING_PKGS+=("cmake;${ANDROID_CMAKE_VERSION}")
+            [[ -x "${BUILD_TOOLS_DIR}/apksigner" ]] || MISSING_PKGS+=("build-tools;${ANDROID_BUILD_TOOLS_VERSION}")
+            if [[ ${#MISSING_PKGS[@]} -gt 0 ]]; then
+              echo "Installing missing SDK packages: ${MISSING_PKGS[*]}"
+              "${SDKMANAGER_BIN}" --install "${MISSING_PKGS[@]}"
+            fi
+          fi
 
           {
             echo "ANDROID_HOME=${SDK_ROOT}"
@@ -71,11 +83,6 @@ jobs:
             echo "${BUILD_TOOLS_DIR}"
             echo "${CMAKE_DIR}/bin"
           } >> "${GITHUB_PATH}"
-
-          SDKMANAGER_BIN="$(command -v sdkmanager || echo "${SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager")"
-          set +o pipefail
-          yes | "${SDKMANAGER_BIN}" --licenses >/dev/null 2>&1 || true
-          set -o pipefail
 
           java -version
           test -d "${SDK_ROOT}/platforms/android-${ANDROID_COMPILE_SDK}"

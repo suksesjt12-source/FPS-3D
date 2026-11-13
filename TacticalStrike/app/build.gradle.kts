@@ -32,11 +32,11 @@ android {
 
     signingConfigs {
         create("release") {
-            val keystorePath = System.getenv("KEYSTORE_FILE")
-                ?: System.getenv("ANDROID_KEYSTORE_PATH")
-            val keystorePass = System.getenv("KEYSTORE_PASSWORD")
-            val alias = System.getenv("KEY_ALIAS")
-            val keyPass = System.getenv("KEY_PASSWORD") ?: keystorePass
+            val keystorePath = System.getenv("KEYSTORE_FILE")?.takeIf { it.isNotBlank() }
+                ?: System.getenv("ANDROID_KEYSTORE_PATH")?.takeIf { it.isNotBlank() }
+            val keystorePass = System.getenv("KEYSTORE_PASSWORD")?.takeIf { it.isNotBlank() }
+            val alias = System.getenv("KEY_ALIAS")?.takeIf { it.isNotBlank() }
+            val keyPass = System.getenv("KEY_PASSWORD")?.takeIf { it.isNotBlank() } ?: keystorePass
 
             if (!keystorePath.isNullOrBlank() &&
                 !keystorePass.isNullOrBlank() &&
