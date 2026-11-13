@@ -94,6 +94,27 @@ void ParticleSystem::spawnMuzzleFlash(const Vec3& pos, const Vec3& dir) {
     }
 }
 
+void ParticleSystem::spawnTracer(const Vec3& start, const Vec3& end, const Vec4& color) {
+    Vec3 delta = end - start;
+    float dist = delta.length();
+    if (dist < 0.25f) return;
+    Vec3 dir = delta * (1.0f / dist);
+    float speed = 135.0f;
+    float travelLife = clampf(dist / speed, 0.04f, 0.14f);
+    for (int i = 0; i < 4; ++i) {
+        Particle* p = allocParticle();
+        p->active = true;
+        p->pos = start + dir * (0.25f + static_cast<float>(i) * 0.28f);
+        p->vel = dir * speed;
+        p->color = color;
+        p->size = 0.065f - static_cast<float>(i) * 0.008f;
+        p->age = 0.0f;
+        p->life = travelLife;
+        p->gravity = 0.0f;
+        p->additive = true;
+    }
+}
+
 void ParticleSystem::spawnImpactSparks(const Vec3& pos, const Vec3& normal, int count) {
     for (int i = 0; i < count; ++i) {
         Particle* p = allocParticle();

@@ -20,6 +20,7 @@ import android.view.WindowManager
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.SeekBar
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
@@ -452,13 +453,26 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             settings.renderScale = if (it) 1.0f else 0.85f
         }
 
+        val skinNames = arrayOf("CARBON OPS", "DESERT TIGER", "ARCTIC WOLF", "CRIMSON HAZARD")
+        lateinit var skinBtn: Button
+        skinBtn = makeButton("WEAPON SKIN: ${skinNames[settings.weaponSkin]}", Color.rgb(51, 65, 85)) {
+            settings.weaponSkin = (settings.weaponSkin + 1) % skinNames.size
+            settings.applyToNative()
+            skinBtn.text = "WEAPON SKIN: ${skinNames[settings.weaponSkin]}"
+        }
+        card.addView(skinBtn)
+
         card.addView(makeButton("CLOSE SETTINGS", Color.rgb(217, 119, 6)) {
             settingsVisible = false
             lastShownOverlayState = -1
             rebuildOverlayForState(hudState.gameState)
         })
 
-        bg.addView(card, FrameLayout.LayoutParams(
+        val scroll = ScrollView(this).apply {
+            isVerticalScrollBarEnabled = false
+            addView(card)
+        }
+        bg.addView(scroll, FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.CENTER
         ))
         overlayContainer.addView(bg)

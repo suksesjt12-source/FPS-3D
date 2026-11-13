@@ -31,12 +31,23 @@ object NativeBridge {
         var elapsedSec: Float = 0f,
         var nearInteractable: Boolean = false,
         var fps: Int = 60,
+        var weaponSkin: Int = 0,
+        var lastHitHeadshot: Boolean = false,
+        var targetInfoTimer: Float = 0f,
+        var targetEnemyType: Int = 0,
+        var targetEnemyHpRatio: Float = 0f,
+        var playerYaw: Float = 0f,
+        var objRelX: Float = 9999f,
+        var objRelZ: Float = 9999f,
+        var radarCount: Int = 0,
+        val radarEnemies: FloatArray = FloatArray(24),
+        var sprinting: Boolean = false,
         var weaponName: String = "M4A1-TAC",
         var missionName: String = "OPERATION IRON CURTAIN",
         var objectiveTitle: String = ""
     )
 
-    private val floatBuf = FloatArray(22)
+    private val floatBuf = FloatArray(56)
     private val strBuf = Array(3) { "" }
 
     fun pollHudState(out: HudState) {
@@ -63,6 +74,19 @@ object NativeBridge {
         out.elapsedSec = floatBuf[19]
         out.nearInteractable = floatBuf[20] > 0.5f
         out.fps = floatBuf[21].toInt()
+        out.weaponSkin = floatBuf[22].toInt()
+        out.lastHitHeadshot = floatBuf[23] > 0.5f
+        out.targetInfoTimer = floatBuf[24]
+        out.targetEnemyType = floatBuf[25].toInt()
+        out.targetEnemyHpRatio = floatBuf[26]
+        out.playerYaw = floatBuf[27]
+        out.objRelX = floatBuf[28]
+        out.objRelZ = floatBuf[29]
+        out.radarCount = floatBuf[30].toInt().coerceIn(0, 8)
+        for (i in 0 until 24) {
+            out.radarEnemies[i] = floatBuf[31 + i]
+        }
+        out.sprinting = floatBuf[55] > 0.5f
         out.weaponName = strBuf[0]
         out.missionName = strBuf[1]
         out.objectiveTitle = strBuf[2]
@@ -111,6 +135,8 @@ object NativeBridge {
         renderScale: Float,
         targetFps: Int
     )
+
+    external fun nativeSetWeaponSkin(skinIndex: Int)
 
     external fun nativePollHudState(outFloats: FloatArray, outStrings: Array<String>)
 }

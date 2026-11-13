@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <thread>
+#include <vector>
 
 namespace ts {
 
@@ -156,6 +157,11 @@ void GameEngine::setGraphicsSettings(bool shadows, bool postProcess, float rende
     renderer_.setSettings(rs);
 }
 
+void GameEngine::setWeaponSkin(int skinIndex) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    weaponSkin_ = std::max(0, std::min(3, skinIndex));
+}
+
 void GameEngine::stepAndRender() {
     std::lock_guard<std::mutex> lock(mutex_);
     if (appPaused_ || !renderer_.isReady()) return;
@@ -190,11 +196,16 @@ void GameEngine::stepAndRender() {
         InputState inp = inputMgr_.consumeFrameInput();
 
         player_.update(dt, inp, weapons_.getAimFactor(), collision_, camera_, audio_);
-        weapons_.update(dt, inp, player_.getSpeedRatio(), camera_, collision_,
+        weapons_.update(dt, inp, player_.getSpeedRatio(), player_.isSprinting(), camera_, collision_,
                         enemies_, particles_, lighting_, physics_, audio_);
         physics_.update(dt, collision_);
+        const ModelAsset* enemyModels[3] = {
+            levelMgr_.getEnemyModel(EnemyType::Rifleman).get(),
+            levelMgr_.getEnemyModel(EnemyType::Scout).get(),
+            levelMgr_.getEnemyModel(EnemyType::Enforcer).get()
+        };
         enemyAi_.update(dt, enemies_, player_, collision_, animSystem_,
-                        levelMgr_.getEnemyModel().get(), particles_, lighting_, audio_);
+                        enemyModels, particles_, lighting_, audio_);
         particles_.update(dt);
         lighting_.update(dt, player_.getPosition());
         missionMgr_.update(dt, inp.interactPressed, levelMgr_.getCurrentLevel(),
@@ -228,6 +239,9 @@ void GameEngine::stepAndRender() {
                           lighting_,
                           levelMgr_,
                           player_.getSpeedRatio(),
+                          player_.isSprinting(),
+                          player_.getLandDip(),
+                          weaponSkin_,
                           player_.getDamageFlash(),
                           totalTimeSec_,
                           state != MissionState::Menu);
@@ -260,6 +274,8 @@ HudSnapshot GameEngine::getHudSnapshot() {
     s.playerX = player_.getPosition().x;
     s.playerZ = player_.getPosition().z;
     s.playerYaw = player_.getYaw();
+    s.sprinting = player_.isSprinting();
+    s.weaponSkin = weaponSkin_;
 
     const auto& w = weapons_.getActiveWeapon();
     s.weaponSlot = weapons_.getActiveSlot();
@@ -272,6 +288,10 @@ HudSnapshot GameEngine::getHudSnapshot() {
     s.aimFactor = weapons_.getAimFactor();
     s.hitmarkerTimer = weapons_.getHitmarkerTimer();
     s.lastHitKill = weapons_.wasLastHitKill();
+    s.lastHitHeadshot = weapons_.wasLastHitHeadshot();
+    s.targetInfoTimer = weapons_.getTargetInfoTimer();
+    s.targetEnemyType = weapons_.getTargetEnemyType();
+    s.targetEnemyHpRatio = weapons_.getTargetEnemyHpRatio();
 
     s.enemiesAlive = enemies_.getAliveCount();
     s.kills = enemies_.getKillCount();
@@ -284,9 +304,35 @@ HudSnapshot GameEngine::getHudSnapshot() {
     if (objIdx >= 0 && objIdx < static_cast<int>(lvl.objectives.size())) {
         s.objectiveTitle = lvl.objectives[objIdx].title;
         s.objectiveProgress = lvl.objectives[objIdx].progress;
+        if (lvl.objectives[objIdx].type != ObjectiveSpec::Type::EliminateAll) {
+            s.objRelX = lvl.objectives[objIdx].targetPos.x - s.playerX;
+            s.objRelZ = lvl.objectives[objIdx].targetPos.z - s.playerZ;
+        }
     } else {
         s.objectiveTitle = "MISSION COMPLETE";
         s.objectiveProgress = 1.0f;
+    }
+
+    struct RadarCandidate { float distSq; float dx; float dz; float type; };
+    std::vector<RadarCandidate> rc;
+    for (const auto& e : enemies_.getPool()) {
+        if (!e.active || e.state == EnemyAIState::Dead) continue;
+        float dx = e.position.x - s.playerX;
+        float dz = e.position.z - s.playerZ;
+        float d2 = dx * dx + dz * dz;
+        if (d2 <= 42.0f * 42.0f) {
+            rc.push_back({d2, dx, dz, static_cast<float>(static_cast<int>(e.type))});
+        }
+    }
+    std::sort(rc.begin(), rc.end(), [](const RadarCandidate& a, const RadarCandidate& b) {
+        return a.distSq < b.distSq;
+    });
+    int count = std::min<int>(8, static_cast<int>(rc.size()));
+    s.radarCount = count;
+    for (int i = 0; i < count; ++i) {
+        s.radarEnemies[i * 3 + 0] = rc[i].dx;
+        s.radarEnemies[i * 3 + 1] = rc[i].dz;
+        s.radarEnemies[i * 3 + 2] = rc[i].type;
     }
     return s;
 }

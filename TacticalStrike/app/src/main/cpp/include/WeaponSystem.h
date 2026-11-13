@@ -18,7 +18,8 @@ class EnemySystem;
 enum class WeaponId {
     AssaultRifle = 0,
     Smg = 1,
-    Sidearm = 2
+    Shotgun = 2,
+    Sidearm = 3
 };
 
 struct WeaponSpec {
@@ -35,6 +36,7 @@ struct WeaponSpec {
     float adsSpread = 0.003f;
     float range = 120.0f;
     bool automatic = true;
+    int pellets = 1;
     SoundId shotSound = SoundId::RifleShot;
 };
 
@@ -52,6 +54,7 @@ public:
     void update(float dt,
                 const InputState& input,
                 float playerSpeedRatio,
+                bool sprinting,
                 CameraSystem& camera,
                 const CollisionSystem& collision,
                 EnemySystem& enemies,
@@ -69,10 +72,15 @@ public:
     float getAimFactor() const { return aimFactor_; }
     float getHitmarkerTimer() const { return hitmarkerTimer_; }
     bool wasLastHitKill() const { return lastHitKill_; }
+    bool wasLastHitHeadshot() const { return lastHitHeadshot_; }
+    float getTargetInfoTimer() const { return targetInfoTimer_; }
+    int getTargetEnemyType() const { return targetEnemyType_; }
+    float getTargetEnemyHpRatio() const { return targetEnemyHpRatio_; }
     int getShotsFired() const { return shotsFired_; }
     int getShotsHit() const { return shotsHit_; }
 
-    Mat4 getViewmodelMatrix(const CameraSystem& camera, float playerSpeedRatio) const;
+    Mat4 getViewmodelMatrix(const CameraSystem& camera, float playerSpeedRatio, bool sprinting, float landDip) const;
+    Mat4 getArmsViewmodelMatrix(const CameraSystem& camera, float playerSpeedRatio, bool sprinting, float landDip) const;
 
 private:
     void fireShot(CameraSystem& camera,
@@ -82,7 +90,7 @@ private:
                   LightingSystem& lighting,
                   AudioSystem& audio);
 
-    std::array<WeaponRuntime, 3> weapons_;
+    std::array<WeaponRuntime, 4> weapons_;
     int activeSlot_ = 0;
     int grenades_ = 2;
 
@@ -90,12 +98,17 @@ private:
     bool reloading_ = false;
     float reloadTimer_ = 0.0f;
     float aimFactor_ = 0.0f;
+    float sprintBlend_ = 0.0f;
     float recoilKickZ_ = 0.0f;
     float recoilRotX_ = 0.0f;
     float swayPhase_ = 0.0f;
     float switchAnim_ = 0.0f;
     float hitmarkerTimer_ = 0.0f;
     bool lastHitKill_ = false;
+    bool lastHitHeadshot_ = false;
+    float targetInfoTimer_ = 0.0f;
+    int targetEnemyType_ = 0;
+    float targetEnemyHpRatio_ = 1.0f;
     bool triggerHeldLastFrame_ = false;
 
     int shotsFired_ = 0;

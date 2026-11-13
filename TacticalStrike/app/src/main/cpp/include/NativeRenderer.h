@@ -44,6 +44,9 @@ public:
                      const LightingSystem& lighting,
                      const LevelManager& levelMgr,
                      float playerSpeedRatio,
+                     bool playerSprinting,
+                     float playerLandDip,
+                     int weaponSkinIndex,
                      float damageFlash,
                      float timeSec,
                      bool drawViewmodel);

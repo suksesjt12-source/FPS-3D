@@ -5,6 +5,7 @@
 #include "LightingSystem.h"
 #include "Math3D.h"
 #include "ModelLoader.h"
+#include <algorithm>
 #include <android/asset_manager.h>
 #include <memory>
 #include <string>
@@ -85,17 +86,33 @@ public:
     const LevelData& getCurrentLevel() const { return level_; }
     int getMissionCount() const { return 3; }
 
-    std::shared_ptr<ModelAsset> getEnemyModel() const { return enemyModel_; }
+    std::shared_ptr<ModelAsset> getEnemyModel(EnemyType type = EnemyType::Rifleman) const {
+        switch (type) {
+            case EnemyType::Scout: return enemyScoutModel_ ? enemyScoutModel_ : enemyModel_;
+            case EnemyType::Enforcer: return enemyEnforcerModel_ ? enemyEnforcerModel_ : enemyModel_;
+            case EnemyType::Rifleman:
+            default: return enemyModel_;
+        }
+    }
     std::shared_ptr<ModelAsset> getWeaponModel(int slot) const {
-        if (slot < 0 || slot >= 3) return weaponModels_[0];
+        if (slot < 0 || slot >= 4) return weaponModels_[0];
         return weaponModels_[slot];
+    }
+    std::shared_ptr<ModelAsset> getArmsModel() const { return viewmodelArmsModel_; }
+    GLuint getWeaponSkinTex(int skinIndex) const {
+        int idx = std::max(0, std::min(3, skinIndex));
+        return weaponSkinTex_[idx];
     }
     std::shared_ptr<ModelAsset> getGrenadeModel() const { return grenadeModel_; }
 
 private:
     LevelData level_;
     std::shared_ptr<ModelAsset> enemyModel_;
-    std::shared_ptr<ModelAsset> weaponModels_[3];
+    std::shared_ptr<ModelAsset> enemyScoutModel_;
+    std::shared_ptr<ModelAsset> enemyEnforcerModel_;
+    std::shared_ptr<ModelAsset> weaponModels_[4];
+    std::shared_ptr<ModelAsset> viewmodelArmsModel_;
+    GLuint weaponSkinTex_[4]{0, 0, 0, 0};
     std::shared_ptr<ModelAsset> grenadeModel_;
     std::shared_ptr<ModelAsset> propCrate_;
     std::shared_ptr<ModelAsset> propBarrier_;

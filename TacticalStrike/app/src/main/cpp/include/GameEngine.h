@@ -56,6 +56,16 @@ struct HudSnapshot {
     float playerX = 0.0f;
     float playerZ = 0.0f;
     float playerYaw = 0.0f;
+    bool sprinting = false;
+    int weaponSkin = 0;
+    bool lastHitHeadshot = false;
+    float targetInfoTimer = 0.0f;
+    int targetEnemyType = 0;
+    float targetEnemyHpRatio = 0.0f;
+    float objRelX = 9999.0f;
+    float objRelZ = 9999.0f;
+    int radarCount = 0;
+    float radarEnemies[8 * 3]{};
 };
 
 class GameEngine {
@@ -77,6 +87,7 @@ public:
 
     void setSensitivity(float touchSens, float adsMult, float gyroSens, bool gyroEnabled, bool invertY);
     void setGraphicsSettings(bool shadows, bool postProcess, float renderScale, int targetFps);
+    void setWeaponSkin(int skinIndex);
 
     InputManager& getInputManager() { return inputMgr_; }
     void stepAndRender();
@@ -89,6 +100,7 @@ private:
     bool missionLoaded_ = false;
     bool missionRecorded_ = false;
     int pendingMissionStart_ = -1;
+    int weaponSkin_ = 0;
 
     void loadMissionOnGlThread(int missionIndex);
 

@@ -11,6 +11,7 @@ public:
     void setAngles(float yawRad, float pitchRad);
     void addRecoilOffset(float pitchKick, float yawKick);
     void setAimFactor(float adsFactor) { adsFactor_ = clampf(adsFactor, 0.0f, 1.0f); }
+    void setSprintFactor(float sprintFactor) { sprintFactor_ = clampf(sprintFactor, 0.0f, 1.0f); }
     void addShake(float intensity);
     void update(float dt);
 
@@ -46,6 +47,7 @@ private:
     float adsFovDeg_ = 46.0f;
     float currentFovDeg_ = 72.0f;
     float adsFactor_ = 0.0f;
+    float sprintFactor_ = 0.0f;
     float aspect_ = 16.0f / 9.0f;
     float nearZ_ = 0.08f;
     float farZ_ = 180.0f;

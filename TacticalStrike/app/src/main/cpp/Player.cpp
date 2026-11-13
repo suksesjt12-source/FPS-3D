@@ -17,6 +17,7 @@ void PlayerController::spawnAt(const Vec3& feetPos, float yawRad) {
     sprinting_ = false;
     grounded_ = true;
     damageFlash_ = 0.0f;
+    landDip_ = 0.0f;
     stepTimer_ = 0.0f;
 }
 
@@ -51,6 +52,9 @@ void PlayerController::update(float dt,
                               AudioSystem& audio) {
     if (damageFlash_ > 0.0f) {
         damageFlash_ = std::max(0.0f, damageFlash_ - dt * 2.4f);
+    }
+    if (landDip_ > 0.0f) {
+        landDip_ = std::max(0.0f, landDip_ - dt * 0.45f);
     }
 
     if (!isAlive()) {
@@ -98,17 +102,24 @@ void PlayerController::update(float dt,
         grounded_ = false;
     }
 
+    float preFallVy = velocity_.y;
+    bool wasGrounded = grounded_;
     velocity_.y -= 18.5f * dt;
     position_ += velocity_ * dt;
 
     bool nowGrounded = false;
     collision.resolveCharacterMove(position_, velocity_, 0.36f, colliderHeight, nowGrounded);
+    if (!wasGrounded && nowGrounded && preFallVy < -3.0f) {
+        landDip_ = clampf(-preFallVy * 0.014f, 0.025f, 0.11f);
+        audio.playSound(SoundId::Footstep, 0.65f);
+    }
     grounded_ = nowGrounded;
 
     float horizSpeed = std::sqrt(velocity_.x * velocity_.x + velocity_.z * velocity_.z);
     speedRatio_ = clampf(horizSpeed / 8.0f, 0.0f, 1.0f);
 
     Vec3 camPos = getEyePosition();
+    camPos.y -= landDip_;
     if (grounded_ && horizSpeed > 0.6f) {
         float cadence = sprinting_ ? 12.5f : (crouching_ ? 6.5f : 9.2f);
         bobPhase_ += dt * cadence;
@@ -127,6 +138,7 @@ void PlayerController::update(float dt,
     camera.setPosition(camPos);
     camera.setAngles(yaw_, pitch_);
     camera.setAimFactor(aimFactor);
+    camera.setSprintFactor(sprinting_ ? speedRatio_ : 0.0f);
     camera.update(dt);
 }
 

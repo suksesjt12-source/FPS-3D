@@ -18,7 +18,7 @@ public:
                 PlayerController& player,
                 const CollisionSystem& collision,
                 const AnimationSystem& animSystem,
-                const ModelAsset* enemyModel,
+                const ModelAsset* const enemyModels[3],
                 ParticleSystem& particles,
                 LightingSystem& lighting,
                 AudioSystem& audio);

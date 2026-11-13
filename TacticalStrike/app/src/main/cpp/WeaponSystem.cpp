@@ -6,17 +6,21 @@
 namespace ts {
 
 void WeaponSystem::resetLoadout() {
-    weapons_[0].spec = {WeaponId::AssaultRifle, "M4A1-TAC", 28.0f, 0.095f, 30, 180, 1.75f, 0.024f, 0.009f, 0.022f, 0.0028f, 130.0f, true, SoundId::RifleShot};
+    weapons_[0].spec = {WeaponId::AssaultRifle, "M4A1-TAC", 28.0f, 0.095f, 30, 180, 1.75f, 0.024f, 0.009f, 0.022f, 0.0028f, 130.0f, true, 1, SoundId::RifleShot};
     weapons_[0].magAmmo = 30;
     weapons_[0].reserveAmmo = 150;
 
-    weapons_[1].spec = {WeaponId::Smg, "MP7-SPEC", 20.0f, 0.068f, 40, 200, 1.45f, 0.017f, 0.011f, 0.028f, 0.0050f, 90.0f, true, SoundId::SmgShot};
+    weapons_[1].spec = {WeaponId::Smg, "MP7-SPEC", 20.0f, 0.068f, 40, 200, 1.45f, 0.017f, 0.011f, 0.028f, 0.0050f, 90.0f, true, 1, SoundId::SmgShot};
     weapons_[1].magAmmo = 40;
     weapons_[1].reserveAmmo = 160;
 
-    weapons_[2].spec = {WeaponId::Sidearm, "USP-45", 36.0f, 0.22f, 12, 72, 1.25f, 0.032f, 0.006f, 0.016f, 0.0022f, 80.0f, false, SoundId::PistolShot};
-    weapons_[2].magAmmo = 12;
-    weapons_[2].reserveAmmo = 48;
+    weapons_[2].spec = {WeaponId::Shotgun, "M870-BREACH", 21.0f, 0.72f, 8, 48, 2.05f, 0.055f, 0.016f, 0.065f, 0.036f, 45.0f, false, 6, SoundId::RifleShot};
+    weapons_[2].magAmmo = 8;
+    weapons_[2].reserveAmmo = 32;
+
+    weapons_[3].spec = {WeaponId::Sidearm, "USP-45", 36.0f, 0.22f, 12, 72, 1.25f, 0.032f, 0.006f, 0.016f, 0.0022f, 80.0f, false, 1, SoundId::PistolShot};
+    weapons_[3].magAmmo = 12;
+    weapons_[3].reserveAmmo = 48;
 
     activeSlot_ = 0;
     grenades_ = 2;
@@ -24,11 +28,14 @@ void WeaponSystem::resetLoadout() {
     reloading_ = false;
     reloadTimer_ = 0.0f;
     aimFactor_ = 0.0f;
+    sprintBlend_ = 0.0f;
     recoilKickZ_ = 0.0f;
     recoilRotX_ = 0.0f;
     switchAnim_ = 0.0f;
     hitmarkerTimer_ = 0.0f;
     lastHitKill_ = false;
+    lastHitHeadshot_ = false;
+    targetInfoTimer_ = 0.0f;
     shotsFired_ = 0;
     shotsHit_ = 0;
 }
@@ -36,7 +43,8 @@ void WeaponSystem::resetLoadout() {
 void WeaponSystem::addAmmo(int rifleReserve, int smgReserve, int pistolReserve, int grenades) {
     weapons_[0].reserveAmmo = std::min(weapons_[0].spec.maxReserve, weapons_[0].reserveAmmo + rifleReserve);
     weapons_[1].reserveAmmo = std::min(weapons_[1].spec.maxReserve, weapons_[1].reserveAmmo + smgReserve);
-    weapons_[2].reserveAmmo = std::min(weapons_[2].spec.maxReserve, weapons_[2].reserveAmmo + pistolReserve);
+    weapons_[2].reserveAmmo = std::min(weapons_[2].spec.maxReserve, weapons_[2].reserveAmmo + std::max(4, pistolReserve / 3));
+    weapons_[3].reserveAmmo = std::min(weapons_[3].spec.maxReserve, weapons_[3].reserveAmmo + pistolReserve);
     grenades_ = std::min(4, grenades_ + grenades);
 }
 
@@ -57,6 +65,7 @@ float WeaponSystem::getReloadProgress() const {
 void WeaponSystem::update(float dt,
                           const InputState& input,
                           float playerSpeedRatio,
+                          bool sprinting,
                           CameraSystem& camera,
                           const CollisionSystem& collision,
                           EnemySystem& enemies,
@@ -66,13 +75,14 @@ void WeaponSystem::update(float dt,
                           AudioSystem& audio) {
     if (fireCooldown_ > 0.0f) fireCooldown_ = std::max(0.0f, fireCooldown_ - dt);
     if (hitmarkerTimer_ > 0.0f) hitmarkerTimer_ = std::max(0.0f, hitmarkerTimer_ - dt);
+    if (targetInfoTimer_ > 0.0f) targetInfoTimer_ = std::max(0.0f, targetInfoTimer_ - dt);
     if (switchAnim_ > 0.0f) switchAnim_ = std::max(0.0f, switchAnim_ - dt * 4.0f);
 
-    // Weapon switch
+    // Weapon switch (4 slots)
     if (input.weaponSwitchReq >= 0) {
         int nextSlot = (input.weaponSwitchReq == 99)
-            ? ((activeSlot_ + 1) % 3)
-            : std::clamp(input.weaponSwitchReq, 0, 2);
+            ? ((activeSlot_ + 1) % 4)
+            : std::clamp(input.weaponSwitchReq, 0, 3);
         if (nextSlot != activeSlot_) {
             activeSlot_ = nextSlot;
             reloading_ = false;
@@ -102,9 +112,11 @@ void WeaponSystem::update(float dt,
         }
     }
 
-    // ADS interpolation
-    float targetAim = (input.aim && !reloading_) ? 1.0f : 0.0f;
+    // ADS & Sprint cant interpolation
+    float targetAim = (input.aim && !reloading_ && !sprinting) ? 1.0f : 0.0f;
     aimFactor_ = lerpf(aimFactor_, targetAim, clampf(dt * 12.0f, 0.0f, 1.0f));
+    float targetSprint = (sprinting && !reloading_ && aimFactor_ < 0.25f) ? 1.0f : 0.0f;
+    sprintBlend_ = lerpf(sprintBlend_, targetSprint, clampf(dt * 10.0f, 0.0f, 1.0f));
 
     // Grenade throw
     if (input.grenadePressed && grenades_ > 0) {
@@ -135,11 +147,11 @@ void WeaponSystem::update(float dt,
         }
     }
 
-    // Viewmodel recoil recovery & sway
+    // Viewmodel recoil recovery & figure-8 sway
     float decay = std::exp(-14.0f * dt);
     recoilKickZ_ *= decay;
     recoilRotX_ *= decay;
-    swayPhase_ += dt * (2.2f + playerSpeedRatio * 7.5f);
+    swayPhase_ += dt * (2.0f + playerSpeedRatio * (sprinting ? 10.5f : 7.5f));
 }
 
 void WeaponSystem::fireShot(CameraSystem& camera,
@@ -155,37 +167,62 @@ void WeaponSystem::fireShot(CameraSystem& camera,
     Vec3 fwd = camera.getForward();
     Vec3 right = camera.getRight();
     Vec3 up = camera.getUp();
-    Vec3 shotDir = (fwd + right * randSym(spread) + up * randSym(spread)).normalized();
 
-    Vec3 muzzleWorld = camera.getPosition() + fwd * 0.68f + right * lerpf(0.22f, 0.0f, aimFactor_) - up * 0.15f;
+    Vec3 muzzleWorld = camera.getPosition() + fwd * 0.68f + right * lerpf(0.22f, 0.0f, aimFactor_) - up * 0.14f;
     particles.spawnMuzzleFlash(muzzleWorld, fwd);
     lighting.spawnTransientLight(muzzleWorld, {1.0f, 0.72f, 0.30f}, 4.5f, 7.0f, 0.06f);
     audio.playSound(spec.shotSound, 0.95f);
 
     camera.addRecoilOffset(spec.recoilPitch * lerpf(1.0f, 0.6f, aimFactor_), randSym(spec.recoilYaw));
-    recoilKickZ_ = std::min(0.08f, recoilKickZ_ + 0.045f);
-    recoilRotX_ = std::min(0.18f, recoilRotX_ + 0.09f);
+    recoilKickZ_ = std::min(0.11f, recoilKickZ_ + (spec.pellets > 1 ? 0.075f : 0.045f));
+    recoilRotX_ = std::min(0.24f, recoilRotX_ + (spec.pellets > 1 ? 0.14f : 0.09f));
 
-    Ray ray{camera.getPosition(), shotDir};
-    RayHit worldHit = collision.raycastWorld(ray, spec.range);
+    bool anyHit = false;
+    bool anyKill = false;
+    bool anyHeadshot = false;
+    int pellets = std::max(1, spec.pellets);
 
-    float maxEnemyDist = worldHit.hit ? worldHit.distance : spec.range;
-    EnemyHitResult enemyHit = enemies.raycastHit(ray, maxEnemyDist);
+    for (int p = 0; p < pellets; ++p) {
+        Vec3 shotDir = (fwd + right * randSym(spread) + up * randSym(spread)).normalized();
+        Ray ray{camera.getPosition(), shotDir};
+        RayHit worldHit = collision.raycastWorld(ray, spec.range);
+        float maxEnemyDist = worldHit.hit ? worldHit.distance : spec.range;
+        EnemyHitResult enemyHit = enemies.raycastHit(ray, maxEnemyDist);
 
-    if (enemyHit.hit) {
+        Vec3 tracerEnd = camera.getPosition() + shotDir * std::min(maxEnemyDist, 45.0f);
+        if (enemyHit.hit) {
+            tracerEnd = enemyHit.point;
+            anyHit = true;
+            anyHeadshot = anyHeadshot || enemyHit.headshot;
+            float dmg = spec.damage * (enemyHit.headshot ? 2.1f : 1.0f);
+            bool killed = enemies.damageEnemy(enemyHit.enemyIndex, dmg, camera.getPosition());
+            anyKill = anyKill || killed;
+            particles.spawnBloodBurst(enemyHit.point, enemyHit.normal, enemyHit.headshot ? 14 : 8);
+
+            const auto& tgt = enemies.getPool()[enemyHit.enemyIndex];
+            targetInfoTimer_ = 2.2f;
+            targetEnemyType_ = static_cast<int>(tgt.type);
+            targetEnemyHpRatio_ = tgt.maxHealth > 0.0f ? clampf(tgt.health / tgt.maxHealth, 0.0f, 1.0f) : 0.0f;
+        } else if (worldHit.hit) {
+            tracerEnd = worldHit.point;
+            particles.spawnImpactSparks(worldHit.point, worldHit.normal, pellets > 1 ? 4 : 8);
+        }
+        particles.spawnTracer(muzzleWorld, tracerEnd, {1.0f, 0.88f, 0.45f, 0.92f});
+    }
+
+    if (anyHit) {
         ++shotsHit_;
-        float dmg = spec.damage * (enemyHit.headshot ? 2.1f : 1.0f);
-        bool killed = enemies.damageEnemy(enemyHit.enemyIndex, dmg, camera.getPosition());
-        particles.spawnBloodBurst(enemyHit.point, enemyHit.normal, enemyHit.headshot ? 14 : 9);
-        hitmarkerTimer_ = 0.16f;
-        lastHitKill_ = killed;
-        audio.playSound(SoundId::Hitmarker, killed ? 1.0f : 0.7f);
-    } else if (worldHit.hit) {
-        particles.spawnImpactSparks(worldHit.point, worldHit.normal, 8);
+        hitmarkerTimer_ = 0.22f;
+        lastHitKill_ = anyKill;
+        lastHitHeadshot_ = anyHeadshot;
+        audio.playSound(SoundId::Hitmarker, anyKill ? 1.0f : 0.72f);
     }
 }
 
-Mat4 WeaponSystem::getViewmodelMatrix(const CameraSystem& camera, float playerSpeedRatio) const {
+Mat4 WeaponSystem::getViewmodelMatrix(const CameraSystem& camera,
+                                      float playerSpeedRatio,
+                                      bool /*sprinting*/,
+                                      float landDip) const {
     Vec3 camPos = camera.getPosition();
     float totalPitch = clampf(camera.getPitch(), -1.45f, 1.45f);
     float totalYaw = camera.getYaw();
@@ -194,31 +231,61 @@ Mat4 WeaponSystem::getViewmodelMatrix(const CameraSystem& camera, float playerSp
                     Mat4::rotateY(-totalYaw) *
                     Mat4::rotateX(totalPitch);
 
-    float swayX = std::cos(swayPhase_) * 0.008f * (0.25f + playerSpeedRatio) * (1.0f - aimFactor_ * 0.7f);
-    float swayY = std::abs(std::sin(swayPhase_)) * -0.010f * (0.25f + playerSpeedRatio) * (1.0f - aimFactor_ * 0.7f);
+    // Figure-8 tactical walk/sprint sway
+    float amp = (0.20f + playerSpeedRatio * 1.15f) * (1.0f - aimFactor_ * 0.72f);
+    float swayX = std::cos(swayPhase_) * 0.0085f * amp;
+    float swayY = std::abs(std::sin(swayPhase_)) * -0.011f * amp;
+    float swayRoll = std::sin(swayPhase_) * 0.024f * playerSpeedRatio * (1.0f - aimFactor_);
 
+    // Multi-stage reload animation (drop, tilt side, magazine swap, bolt rack)
     float reloadDip = 0.0f;
-    float reloadTilt = 0.0f;
+    float reloadPitch = 0.0f;
+    float reloadRoll = 0.0f;
+    float reloadRackZ = 0.0f;
     if (reloading_) {
         float p = getReloadProgress();
         float curve = std::sin(p * PI);
-        reloadDip = -0.14f * curve;
-        reloadTilt = 0.45f * curve;
+        reloadDip = -0.15f * curve;
+        reloadPitch = 0.42f * curve;
+        reloadRoll = 0.36f * curve;
+        if (p > 0.72f && p < 0.92f) {
+            float boltPhase = (p - 0.72f) / 0.20f;
+            reloadRackZ = std::sin(boltPhase * PI) * 0.045f;
+        }
     }
 
+    // Sprint low-ready tactical cant across chest
+    float spPitch = -0.22f * sprintBlend_;
+    float spYaw = 0.48f * sprintBlend_;
+    float spRoll = -0.28f * sprintBlend_;
+
     float switchDip = -0.24f * switchAnim_;
+    float switchPitch = -0.45f * switchAnim_;
 
     Vec3 hipOffset{0.21f, -0.20f, -0.44f};
     Vec3 adsOffset{0.0f, -0.135f, -0.35f};
     Vec3 localPos = lerp(hipOffset, adsOffset, aimFactor_);
-    localPos.x += swayX;
-    localPos.y += swayY + reloadDip + switchDip;
-    localPos.z += recoilKickZ_;
+    localPos.x += swayX - 0.045f * sprintBlend_;
+    localPos.y += swayY + reloadDip + switchDip - 0.055f * sprintBlend_ - landDip * 0.35f;
+    localPos.z += recoilKickZ_ + reloadRackZ + 0.03f * sprintBlend_;
 
     Mat4 local = Mat4::translate(localPos) *
-                 Mat4::rotateX(recoilRotX_ - reloadTilt) *
-                 Mat4::rotateZ(reloadTilt * 0.35f);
+                 Mat4::rotateY(spYaw) *
+                 Mat4::rotateX(recoilRotX_ - reloadPitch + spPitch + switchPitch) *
+                 Mat4::rotateZ(reloadRoll + spRoll + swayRoll);
     return camBasis * local;
+}
+
+Mat4 WeaponSystem::getArmsViewmodelMatrix(const CameraSystem& camera,
+                                          float playerSpeedRatio,
+                                          bool sprinting,
+                                          float landDip) const {
+    Mat4 vm = getViewmodelMatrix(camera, playerSpeedRatio, sprinting, landDip);
+    if (activeSlot_ == 3) {
+        // Pull gloved hands slightly closer/higher for sidearm pistol grip
+        return vm * Mat4::translate({0.0f, 0.015f, -0.04f}) * Mat4::scale({0.95f, 0.95f, 0.85f});
+    }
+    return vm;
 }
 
 } // namespace ts

@@ -32,7 +32,7 @@ void EnemyAI::update(float dt,
                      PlayerController& player,
                      const CollisionSystem& collision,
                      const AnimationSystem& animSystem,
-                     const ModelAsset* enemyModel,
+                     const ModelAsset* const enemyModels[3],
                      ParticleSystem& particles,
                      LightingSystem& lighting,
                      AudioSystem& audio) {
@@ -42,13 +42,30 @@ void EnemyAI::update(float dt,
     for (auto& e : pool) {
         if (!e.active) continue;
 
+        int modelIdx = std::clamp(static_cast<int>(e.type), 0, 2);
+        const ModelAsset* enemyModel = enemyModels ? enemyModels[modelIdx] : nullptr;
+
         if (e.hitFlash > 0.0f) e.hitFlash = std::max(0.0f, e.hitFlash - dt);
+        if (e.hitStagger > 0.0f) e.hitStagger = std::max(0.0f, e.hitStagger - dt);
         e.animTime += dt;
+        e.prevAnimTime += dt;
+        if (e.animBlend < 1.0f) {
+            e.animBlend = std::min(1.0f, e.animBlend + dt * 5.8f);
+        }
 
         if (e.state == EnemyAIState::Dead) {
+            if (e.currentClip != "death") {
+                e.prevClip = e.currentClip;
+                e.prevAnimTime = e.animTime;
+                e.currentClip = "death";
+                e.animBlend = 0.0f;
+            }
             e.deathTimer += dt;
             if (enemyModel) {
-                animSystem.evaluateClip(*enemyModel, "death", e.deathTimer, false, e.pose);
+                animSystem.evaluateBlended(*enemyModel,
+                                           e.prevClip, e.prevAnimTime, true,
+                                           "death", e.deathTimer, false,
+                                           e.animBlend, e.pose);
             }
             if (e.deathTimer > 6.0f) {
                 e.active = false;
@@ -72,6 +89,7 @@ void EnemyAI::update(float dt,
         }
 
         float moveSpeed = (e.type == EnemyType::Scout) ? 4.8f : ((e.type == EnemyType::Enforcer) ? 2.8f : 3.6f);
+        if (e.hitStagger > 0.0f) moveSpeed *= 0.45f;
         Vec3 moveDir{0, 0, 0};
         std::string clip = "idle";
 
@@ -128,7 +146,6 @@ void EnemyAI::update(float dt,
                     moveDir = -toPlayerFlat.normalized() * 0.65f;
                     clip = "walk";
                 } else {
-                    // Tactical strafe
                     Vec3 strafe{-toPlayerFlat.z, 0.0f, toPlayerFlat.x};
                     strafe = strafe.normalized();
                     if (std::fmod(e.animTime, 3.0f) > 1.5f) strafe = -strafe;
@@ -140,19 +157,21 @@ void EnemyAI::update(float dt,
                 if (e.fireCooldown <= 0.0f && player.isAlive()) {
                     if (e.ammoInMag <= 0) {
                         e.state = EnemyAIState::Reload;
-                        e.stateTimer = 1.8f;
+                        e.stateTimer = 1.75f;
                         break;
                     }
                     --e.ammoInMag;
                     clip = "shoot";
 
                     Vec3 enemyFwd{std::sin(e.yaw), 0.0f, -std::cos(e.yaw)};
-                    Vec3 muzzlePos = enemyEye + enemyFwd * 0.55f - Vec3{0, 0.12f, 0};
-                    particles.spawnMuzzleFlash(muzzlePos, toPlayer.normalized());
+                    Vec3 muzzlePos = enemyEye + enemyFwd * 0.55f - Vec3{0, 0.14f, 0};
+                    Vec3 aimDir = toPlayer.normalized();
+                    particles.spawnMuzzleFlash(muzzlePos, aimDir);
+                    particles.spawnTracer(muzzlePos, playerEye + Vec3{rand01() - 0.5f, rand01() - 0.5f, rand01() - 0.5f} * 0.35f,
+                                          {1.0f, 0.42f, 0.18f, 0.90f});
                     lighting.spawnTransientLight(muzzlePos, {1.0f, 0.65f, 0.25f}, 3.0f, 5.0f, 0.05f);
                     audio.playSound(SoundId::RifleShot, clampf(1.0f - distToPlayer / 45.0f, 0.1f, 0.65f));
 
-                    // Accuracy scales with distance & enemy type
                     float hitProb = clampf(0.46f - distToPlayer * 0.014f, 0.08f, 0.48f);
                     if (rand01() < hitProb) {
                         float dmg = (e.type == EnemyType::Enforcer) ? 14.0f : 9.0f;
@@ -208,6 +227,7 @@ void EnemyAI::update(float dt,
             }
 
             case EnemyAIState::Reload: {
+                clip = "reload";
                 e.stateTimer -= dt;
                 if (e.stateTimer <= 0.0f) {
                     e.ammoInMag = (e.type == EnemyType::Enforcer) ? 45 : 30;
@@ -229,8 +249,23 @@ void EnemyAI::update(float dt,
         bool grounded = false;
         collision.resolveCharacterMove(e.position, e.velocity, 0.38f, 1.82f, grounded);
 
+        if (clip != e.currentClip) {
+            e.prevClip = e.currentClip;
+            e.prevAnimTime = e.animTime;
+            e.currentClip = clip;
+            e.animTime = 0.0f;
+            e.animBlend = 0.0f;
+        }
+
         if (enemyModel) {
-            animSystem.evaluateClip(*enemyModel, clip, e.animTime, true, e.pose);
+            if (e.animBlend < 0.995f) {
+                animSystem.evaluateBlended(*enemyModel,
+                                           e.prevClip, e.prevAnimTime, true,
+                                           e.currentClip, e.animTime, true,
+                                           e.animBlend, e.pose);
+            } else {
+                animSystem.evaluateClip(*enemyModel, e.currentClip, e.animTime, true, e.pose);
+            }
         }
     }
 }

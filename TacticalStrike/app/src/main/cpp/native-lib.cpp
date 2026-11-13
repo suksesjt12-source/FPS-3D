@@ -1,4 +1,5 @@
 #include "GameEngine.h"
+#include <algorithm>
 #include <android/asset_manager_jni.h>
 #include <android/native_window_jni.h>
 #include <jni.h>
@@ -204,6 +205,15 @@ Java_com_tacticalstrike_game_NativeBridge_nativeSetGraphicsSettings(JNIEnv* /*en
 }
 
 JNIEXPORT void JNICALL
+Java_com_tacticalstrike_game_NativeBridge_nativeSetWeaponSkin(JNIEnv* /*env*/,
+                                                               jobject /*thiz*/,
+                                                               jint skinIndex) {
+    if (gEngine) {
+        gEngine->setWeaponSkin(skinIndex);
+    }
+}
+
+JNIEXPORT void JNICALL
 Java_com_tacticalstrike_game_NativeBridge_nativePollHudState(JNIEnv* env,
                                                              jobject /*thiz*/,
                                                              jfloatArray outFloats,
@@ -211,31 +221,45 @@ Java_com_tacticalstrike_game_NativeBridge_nativePollHudState(JNIEnv* env,
     if (!gEngine || !outFloats || !outStrings) return;
     ts::HudSnapshot s = gEngine->getHudSnapshot();
 
-    float f[22] = {
-        static_cast<float>(s.gameState),
-        static_cast<float>(s.missionIndex),
-        static_cast<float>(s.unlockedMission),
-        s.health,
-        s.armor,
-        s.stamina,
-        static_cast<float>(s.weaponSlot),
-        static_cast<float>(s.magAmmo),
-        static_cast<float>(s.reserveAmmo),
-        static_cast<float>(s.grenades),
-        s.reloading ? 1.0f : 0.0f,
-        s.reloadProgress,
-        s.aimFactor,
-        s.hitmarkerTimer,
-        s.lastHitKill ? 1.0f : 0.0f,
-        s.damageFlash,
-        s.damageDirAngle,
-        static_cast<float>(s.enemiesAlive),
-        static_cast<float>(s.kills),
-        s.elapsedSec,
-        s.nearInteractable ? 1.0f : 0.0f,
-        static_cast<float>(s.fps)
-    };
-    env->SetFloatArrayRegion(outFloats, 0, 22, f);
+    float f[56]{};
+    f[0] = static_cast<float>(s.gameState);
+    f[1] = static_cast<float>(s.missionIndex);
+    f[2] = static_cast<float>(s.unlockedMission);
+    f[3] = s.health;
+    f[4] = s.armor;
+    f[5] = s.stamina;
+    f[6] = static_cast<float>(s.weaponSlot);
+    f[7] = static_cast<float>(s.magAmmo);
+    f[8] = static_cast<float>(s.reserveAmmo);
+    f[9] = static_cast<float>(s.grenades);
+    f[10] = s.reloading ? 1.0f : 0.0f;
+    f[11] = s.reloadProgress;
+    f[12] = s.aimFactor;
+    f[13] = s.hitmarkerTimer;
+    f[14] = s.lastHitKill ? 1.0f : 0.0f;
+    f[15] = s.damageFlash;
+    f[16] = s.damageDirAngle;
+    f[17] = static_cast<float>(s.enemiesAlive);
+    f[18] = static_cast<float>(s.kills);
+    f[19] = s.elapsedSec;
+    f[20] = s.nearInteractable ? 1.0f : 0.0f;
+    f[21] = static_cast<float>(s.fps);
+    f[22] = static_cast<float>(s.weaponSkin);
+    f[23] = s.lastHitHeadshot ? 1.0f : 0.0f;
+    f[24] = s.targetInfoTimer;
+    f[25] = static_cast<float>(s.targetEnemyType);
+    f[26] = s.targetEnemyHpRatio;
+    f[27] = s.playerYaw;
+    f[28] = s.objRelX;
+    f[29] = s.objRelZ;
+    f[30] = static_cast<float>(s.radarCount);
+    for (int i = 0; i < 24; ++i) {
+        f[31 + i] = s.radarEnemies[i];
+    }
+    f[55] = s.sprinting ? 1.0f : 0.0f;
+
+    jsize cap = env->GetArrayLength(outFloats);
+    env->SetFloatArrayRegion(outFloats, 0, std::min<jsize>(cap, 56), f);
 
     jstring jWeapon = env->NewStringUTF(s.weaponName.c_str());
     jstring jMission = env->NewStringUTF(s.missionName.c_str());

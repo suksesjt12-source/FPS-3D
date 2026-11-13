@@ -15,7 +15,11 @@ void LevelManager::clear() {
 void LevelManager::clearAll() {
     clear();
     enemyModel_.reset();
+    enemyScoutModel_.reset();
+    enemyEnforcerModel_.reset();
     for (auto& w : weaponModels_) w.reset();
+    viewmodelArmsModel_.reset();
+    for (auto& st : weaponSkinTex_) st = 0;
     grenadeModel_.reset();
     propCrate_.reset();
     propBarrier_.reset();
@@ -34,11 +38,19 @@ bool LevelManager::loadMission(int missionIndex,
     enemies.clear();
     lighting.resetLights();
 
-    // Preload core character, weapon, and prop glTF models once
+    // Preload 3 varied skeletal enemy archetypes, 4 weapons, gloved arms, and props
     if (!enemyModel_) enemyModel_ = modelLoader.loadGltf(mgr, texMgr, "models/enemy_trooper.gltf");
+    if (!enemyScoutModel_) enemyScoutModel_ = modelLoader.loadGltf(mgr, texMgr, "models/enemy_scout.gltf");
+    if (!enemyEnforcerModel_) enemyEnforcerModel_ = modelLoader.loadGltf(mgr, texMgr, "models/enemy_enforcer.gltf");
     if (!weaponModels_[0]) weaponModels_[0] = modelLoader.loadGltf(mgr, texMgr, "models/weapon_m4a1.gltf");
     if (!weaponModels_[1]) weaponModels_[1] = modelLoader.loadGltf(mgr, texMgr, "models/weapon_mp7.gltf");
-    if (!weaponModels_[2]) weaponModels_[2] = modelLoader.loadGltf(mgr, texMgr, "models/weapon_usp45.gltf");
+    if (!weaponModels_[2]) weaponModels_[2] = modelLoader.loadGltf(mgr, texMgr, "models/weapon_m870.gltf");
+    if (!weaponModels_[3]) weaponModels_[3] = modelLoader.loadGltf(mgr, texMgr, "models/weapon_usp45.gltf");
+    if (!viewmodelArmsModel_) viewmodelArmsModel_ = modelLoader.loadGltf(mgr, texMgr, "models/viewmodel_arms.gltf");
+    if (!weaponSkinTex_[0]) weaponSkinTex_[0] = texMgr.loadKtxTexture(mgr, "textures/weapon_albedo.ktx");
+    if (!weaponSkinTex_[1]) weaponSkinTex_[1] = texMgr.loadKtxTexture(mgr, "textures/weapon_skin_desert.ktx");
+    if (!weaponSkinTex_[2]) weaponSkinTex_[2] = texMgr.loadKtxTexture(mgr, "textures/weapon_skin_arctic.ktx");
+    if (!weaponSkinTex_[3]) weaponSkinTex_[3] = texMgr.loadKtxTexture(mgr, "textures/weapon_skin_crimson.ktx");
     if (!grenadeModel_) grenadeModel_ = modelLoader.loadGltf(mgr, texMgr, "models/weapon_grenade.gltf");
     if (!propCrate_) propCrate_ = modelLoader.loadGltf(mgr, texMgr, "models/prop_crate.gltf");
     if (!propBarrier_) propBarrier_ = modelLoader.loadGltf(mgr, texMgr, "models/prop_barrier.gltf");

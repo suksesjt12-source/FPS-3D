@@ -1,0 +1,267 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "TacticalStrikeRealisticAssetBuilder"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "weapon_m870",
+      "mesh": 0
+    }
+  ],
+  "meshes": [
+    {
+      "name": "weapon_m870",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "indices": 3,
+          "material": 0
+        },
+        {
+          "attributes": {
+            "POSITION": 4,
+            "NORMAL": 5,
+            "TEXCOORD_0": 6
+          },
+          "indices": 7,
+          "material": 1
+        },
+        {
+          "attributes": {
+            "POSITION": 8,
+            "NORMAL": 9,
+            "TEXCOORD_0": 10
+          },
+          "indices": 11,
+          "material": 2
+        }
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "name": "weapon_body_skin",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.85,
+          0.87,
+          0.9,
+          1.0
+        ],
+        "metallicFactor": 0.72,
+        "roughnessFactor": 0.34,
+        "baseColorTexture": {
+          "index": 0
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    },
+    {
+      "name": "weapon_polymer",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.16,
+          0.17,
+          0.19,
+          1.0
+        ],
+        "metallicFactor": 0.08,
+        "roughnessFactor": 0.82
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    },
+    {
+      "name": "optic_emissive",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.2
+      },
+      "emissiveFactor": [
+        1.0,
+        0.55,
+        0.1
+      ]
+    }
+  ],
+  "textures": [
+    {
+      "source": 0
+    },
+    {
+      "source": 1
+    }
+  ],
+  "images": [
+    {
+      "uri": "textures/weapon_albedo.ktx"
+    },
+    {
+      "uri": "textures/weapon_normal.ktx"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "weapon_m870.bin",
+      "byteLength": 20240
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 2064
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 2064,
+      "byteLength": 2064
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 4128,
+      "byteLength": 1376
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 5504,
+      "byteLength": 624
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 6128,
+      "byteLength": 4464
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 10592,
+      "byteLength": 4464
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 15056,
+      "byteLength": 2976
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 18032,
+      "byteLength": 1368
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 19400,
+      "byteLength": 288
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 19688,
+      "byteLength": 288
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 19976,
+      "byteLength": 192
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 20168,
+      "byteLength": 72
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 172,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 172,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 172,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 312,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 372,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5126,
+      "count": 372,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 6,
+      "componentType": 5126,
+      "count": 372,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 7,
+      "componentType": 5123,
+      "count": 684,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 8,
+      "componentType": 5126,
+      "count": 24,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 9,
+      "componentType": 5126,
+      "count": 24,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 10,
+      "componentType": 5126,
+      "count": 24,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 11,
+      "componentType": 5123,
+      "count": 36,
+      "type": "SCALAR"
+    }
+  ]
+}

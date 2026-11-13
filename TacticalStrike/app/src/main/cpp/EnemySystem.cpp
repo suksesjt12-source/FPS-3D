@@ -74,6 +74,7 @@ bool EnemySystem::damageEnemy(int index, float amount, const Vec3& attackerPos) 
     e.armor -= absorbed;
     e.health -= (amount - absorbed);
     e.hitFlash = 0.18f;
+    e.hitStagger = 0.22f;
 
     // Alert enemy toward attacker
     if (e.state == EnemyAIState::Patrol) {

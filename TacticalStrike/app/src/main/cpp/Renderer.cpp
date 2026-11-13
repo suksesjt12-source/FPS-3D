@@ -318,6 +318,9 @@ void NativeRenderer::renderFrame(const CameraSystem& camera,
                                  const LightingSystem& lighting,
                                  const LevelManager& levelMgr,
                                  float playerSpeedRatio,
+                                 bool playerSprinting,
+                                 float playerLandDip,
+                                 int weaponSkinIndex,
                                  float damageFlash,
                                  float timeSec,
                                  bool drawViewmodel) {
@@ -360,13 +363,14 @@ void NativeRenderer::renderFrame(const CameraSystem& camera,
         }
 
         GLuint shSkin = shaders_.getProgram("shadow_skinned");
-        auto enemyModel = levelMgr.getEnemyModel();
-        if (shSkin && enemyModel) {
+        if (shSkin) {
             glUseProgram(shSkin);
             glUniformMatrix4fv(shaders_.getUniformLocation(shSkin, "uLightSpaceMatrix"),
                                1, GL_FALSE, lighting.getLightSpaceMatrix().m);
             for (const auto& e : enemies.getPool()) {
                 if (!e.active) continue;
+                auto enemyModel = levelMgr.getEnemyModel(e.type);
+                if (!enemyModel) continue;
                 Mat4 m = Mat4::translate(e.position) * Mat4::rotateY(-e.yaw);
                 glUniformMatrix4fv(shaders_.getUniformLocation(shSkin, "uBoneMatrices"),
                                    MAX_SKIN_BONES, GL_FALSE, e.pose.boneMatrices[0].m);
@@ -487,10 +491,9 @@ void NativeRenderer::renderFrame(const CameraSystem& camera,
         }
     }
 
-    // 2c. Skeletal Skinned Enemies (with Frustum Culling)
+    // 2c. Skeletal Skinned Enemies (3 varied archetypes + Frustum Culling)
     GLuint pbrSkinned = shaders_.getProgram("pbr_skinned");
-    auto enemyModel = levelMgr.getEnemyModel();
-    if (pbrSkinned && enemyModel) {
+    if (pbrSkinned) {
         glUseProgram(pbrSkinned);
         glUniformMatrix4fv(shaders_.getUniformLocation(pbrSkinned, "uViewProj"),
                            1, GL_FALSE, camera.getViewProjMatrix().m);
@@ -498,6 +501,9 @@ void NativeRenderer::renderFrame(const CameraSystem& camera,
 
         for (const auto& e : enemies.getPool()) {
             if (!e.active) continue;
+            auto enemyModel = levelMgr.getEnemyModel(e.type);
+            if (!enemyModel) continue;
+
             AABB enemyBox{
                 {e.position.x - 0.6f, e.position.y, e.position.z - 0.6f},
                 {e.position.x + 0.6f, e.position.y + 2.0f, e.position.z + 0.6f}
@@ -510,24 +516,20 @@ void NativeRenderer::renderFrame(const CameraSystem& camera,
 
             for (auto prim : enemyModel->primitives) {
                 if (e.hitFlash > 0.0f) {
-                    prim.material.emissive = {0.8f, 0.15f, 0.10f};
-                } else if (e.type == EnemyType::Enforcer) {
-                    prim.material.baseColor = {0.42f, 0.28f, 0.26f, 1.0f};
-                } else if (e.type == EnemyType::Scout) {
-                    prim.material.baseColor = {0.32f, 0.42f, 0.36f, 1.0f};
+                    prim.material.emissive = {0.85f, 0.18f, 0.10f};
                 }
                 drawPrimitive(pbrSkinned, prim, model, false);
             }
         }
     }
 
-    // 2d. Particles
+    // 2d. Particles & Bullet Tracers
     particles.render(shaders_.getProgram("particle"),
                      camera.getViewProjMatrix(),
                      camera.getRight(),
                      camera.getUp());
 
-    // 2e. First-Person Weapon Viewmodel (foreground depth range)
+    // 2e. First-Person Weapon Viewmodel + Tactical Gloved Arms
     auto weaponModel = levelMgr.getWeaponModel(weapons.getActiveSlot());
     if (drawViewmodel && pbrStatic && weaponModel) {
         glClear(GL_DEPTH_BUFFER_BIT);
@@ -535,8 +537,22 @@ void NativeRenderer::renderFrame(const CameraSystem& camera,
         glUniformMatrix4fv(shaders_.getUniformLocation(pbrStatic, "uViewProj"),
                            1, GL_FALSE, camera.getViewProjMatrix().m);
         bindLightingUniforms(pbrStatic, lighting, camera);
-        Mat4 vmMat = weapons.getViewmodelMatrix(camera, playerSpeedRatio);
-        for (const auto& prim : weaponModel->primitives) {
+
+        auto armsModel = levelMgr.getArmsModel();
+        if (armsModel) {
+            Mat4 armsMat = weapons.getArmsViewmodelMatrix(camera, playerSpeedRatio, playerSprinting, playerLandDip);
+            for (const auto& prim : armsModel->primitives) {
+                drawPrimitive(pbrStatic, prim, armsMat, false);
+            }
+        }
+
+        Mat4 vmMat = weapons.getViewmodelMatrix(camera, playerSpeedRatio, playerSprinting, playerLandDip);
+        GLuint skinTex = levelMgr.getWeaponSkinTex(weaponSkinIndex);
+        for (size_t i = 0; i < weaponModel->primitives.size(); ++i) {
+            auto prim = weaponModel->primitives[i];
+            if (i == 0 && skinTex != 0) {
+                prim.material.albedoTex = skinTex;
+            }
             drawPrimitive(pbrStatic, prim, vmMat, false);
         }
     }

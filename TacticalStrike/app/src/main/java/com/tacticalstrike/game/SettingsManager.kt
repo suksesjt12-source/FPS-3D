@@ -50,6 +50,10 @@ class SettingsManager(context: Context) {
         get() = prefs.getInt("target_fps", 60)
         set(v) = prefs.edit().putInt("target_fps", v).apply()
 
+    var weaponSkin: Int
+        get() = prefs.getInt("weapon_skin", 0).coerceIn(0, 3)
+        set(v) = prefs.edit().putInt("weapon_skin", v.coerceIn(0, 3)).apply()
+
     private val defaultPositions = mapOf(
         "joystick" to ControlPos(0.13f, 0.52f, 52f),
         "sprint"   to ControlPos(0.13f, 0.27f, 24f),
@@ -109,5 +113,6 @@ class SettingsManager(context: Context) {
             renderScale,
             targetFps
         )
+        NativeBridge.nativeSetWeaponSkin(weaponSkin)
     }
 }

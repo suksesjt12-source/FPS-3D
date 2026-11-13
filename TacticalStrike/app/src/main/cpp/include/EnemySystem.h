@@ -49,7 +49,12 @@ struct EnemyEntity {
     int burstRemaining = 0;
     int ammoInMag = 24;
     float animTime = 0.0f;
+    float prevAnimTime = 0.0f;
+    float animBlend = 1.0f;
+    std::string currentClip = "idle";
+    std::string prevClip = "idle";
     float hitFlash = 0.0f;
+    float hitStagger = 0.0f;
     float deathTimer = 0.0f;
     bool alertTriggered = false;
 

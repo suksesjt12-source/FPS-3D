@@ -35,6 +35,7 @@ public:
     bool isCrouching() const { return crouching_; }
     bool isAlive() const { return health_ > 0.0f; }
     float getSpeedRatio() const { return speedRatio_; }
+    float getLandDip() const { return landDip_; }
     float getDamageFlash() const { return damageFlash_; }
     float getDamageDirAngle() const { return damageDirAngle_; }
 
@@ -54,6 +55,7 @@ private:
     float stepTimer_ = 0.0f;
     float bobPhase_ = 0.0f;
     float speedRatio_ = 0.0f;
+    float landDip_ = 0.0f;
     float damageFlash_ = 0.0f;
     float damageDirAngle_ = 0.0f;
 

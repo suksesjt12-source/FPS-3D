@@ -25,7 +25,8 @@ void CameraSystem::addShake(float intensity) {
 }
 
 void CameraSystem::update(float dt) {
-    float targetFov = lerpf(baseFovDeg_, adsFovDeg_, adsFactor_);
+    float dynamicBaseFov = baseFovDeg_ + sprintFactor_ * 5.5f;
+    float targetFov = lerpf(dynamicBaseFov, adsFovDeg_, adsFactor_);
     currentFovDeg_ = lerpf(currentFovDeg_, targetFov, clampf(dt * 14.0f, 0.0f, 1.0f));
 
     // Smoothly recover recoil offset

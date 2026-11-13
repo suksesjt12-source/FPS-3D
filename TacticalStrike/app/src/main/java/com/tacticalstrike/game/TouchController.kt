@@ -114,6 +114,17 @@ class TouchController(
         hud.elapsedSec = snapshot.elapsedSec
         hud.nearInteractable = snapshot.nearInteractable
         hud.fps = snapshot.fps
+        hud.weaponSkin = snapshot.weaponSkin
+        hud.lastHitHeadshot = snapshot.lastHitHeadshot
+        hud.targetInfoTimer = snapshot.targetInfoTimer
+        hud.targetEnemyType = snapshot.targetEnemyType
+        hud.targetEnemyHpRatio = snapshot.targetEnemyHpRatio
+        hud.playerYaw = snapshot.playerYaw
+        hud.objRelX = snapshot.objRelX
+        hud.objRelZ = snapshot.objRelZ
+        hud.radarCount = snapshot.radarCount
+        System.arraycopy(snapshot.radarEnemies, 0, hud.radarEnemies, 0, 24)
+        hud.sprinting = snapshot.sprinting
         hud.weaponName = snapshot.weaponName
         hud.missionName = snapshot.missionName
         hud.objectiveTitle = snapshot.objectiveTitle
@@ -394,7 +405,8 @@ class TouchController(
     }
 
     private fun drawCrosshair(canvas: Canvas, cx: Float, cy: Float) {
-        val spreadPx = (10f - hud.aimFactor * 6f) * density
+        val sprintGap = if (hud.sprinting) 6f else 0f
+        val spreadPx = (10f + sprintGap - hud.aimFactor * 6f) * density
         val lineLen = (7f - hud.aimFactor * 2f) * density
         strokePaint.color = Color.argb(215, 245, 248, 250)
         strokePaint.strokeWidth = 2.0f * density
@@ -408,16 +420,45 @@ class TouchController(
         fillPaint.color = if (hud.aimFactor > 0.5f) Color.rgb(239, 68, 68) else Color.WHITE
         canvas.drawCircle(cx, cy, 2.2f * density, fillPaint)
 
-        // Hitmarker
+        // Hitmarker + Headshot indicator
         if (hud.hitmarkerTimer > 0.005f) {
-            strokePaint.color = if (hud.lastHitKill) Color.rgb(239, 68, 68) else Color.WHITE
-            strokePaint.strokeWidth = 2.6f * density
+            strokePaint.color = when {
+                hud.lastHitKill -> Color.rgb(239, 68, 68)
+                hud.lastHitHeadshot -> Color.rgb(245, 158, 11)
+                else -> Color.WHITE
+            }
+            strokePaint.strokeWidth = (if (hud.lastHitHeadshot) 3.2f else 2.6f) * density
             val r1 = 6f * density
-            val r2 = 15f * density
+            val r2 = (if (hud.lastHitHeadshot) 18f else 15f) * density
             canvas.drawLine(cx - r2, cy - r2, cx - r1, cy - r1, strokePaint)
             canvas.drawLine(cx + r1, cy - r1, cx + r2, cy - r2, strokePaint)
             canvas.drawLine(cx - r2, cy + r2, cx - r1, cy + r1, strokePaint)
             canvas.drawLine(cx + r1, cy + r1, cx + r2, cy + r2, strokePaint)
+
+            if (hud.lastHitHeadshot || hud.lastHitKill) {
+                textPaint.color = if (hud.lastHitKill) Color.rgb(239, 68, 68) else Color.rgb(250, 204, 21)
+                textPaint.textSize = 11f * density
+                val tag = if (hud.lastHitKill && hud.lastHitHeadshot) "HEADSHOT KILL" else if (hud.lastHitHeadshot) "HEADSHOT" else "ELIMINATED"
+                canvas.drawText(tag, cx, cy - 26f * density, textPaint)
+            }
+        }
+
+        // Target Enemy Class & HP Bar
+        if (hud.targetInfoTimer > 0.02f) {
+            val enemyLabel = when (hud.targetEnemyType) {
+                1 -> "SCOUT RECON"
+                2 -> "HEAVY ENFORCER"
+                else -> "TROOPER"
+            }
+            val barW = 96f * density
+            val barY = cy + 28f * density
+            textPaint.color = Color.rgb(226, 232, 240)
+            textPaint.textSize = 9.5f * density
+            canvas.drawText(enemyLabel, cx, barY - 3f * density, textPaint)
+            fillPaint.color = Color.argb(170, 15, 23, 42)
+            canvas.drawRect(cx - barW * 0.5f, barY, cx + barW * 0.5f, barY + 4.5f * density, fillPaint)
+            fillPaint.color = if (hud.targetEnemyHpRatio <= 0.35f) Color.rgb(239, 68, 68) else Color.rgb(245, 158, 11)
+            canvas.drawRect(cx - barW * 0.5f, barY, cx - barW * 0.5f + barW * hud.targetEnemyHpRatio.coerceIn(0f, 1f), barY + 4.5f * density, fillPaint)
         }
 
         // Reload Progress Ring
@@ -451,14 +492,66 @@ class TouchController(
         val mins = (hud.elapsedSec / 60f).toInt()
         val secs = (hud.elapsedSec % 60f).toInt()
         textPaint.color = Color.argb(230, 226, 232, 240)
-        textPaint.textSize = 12.5f * density
-        val stripCenter = (254f * density + (w - 72f * density)) * 0.5f
+        textPaint.textSize = 12f * density
+        val radarR = 28f * density
+        val radarCx = w - 108f * density
+        val radarCy = 40f * density
+        val stripCenter = (254f * density + (radarCx - radarR - 8f * density)) * 0.5f
         canvas.drawText(
             String.format(Locale.US, "HOSTILES: %d   |   KILLS: %d   |   %02d:%02d   |   %d FPS", hud.enemiesAlive, hud.kills, mins, secs, hud.fps),
             stripCenter,
             29f * density,
             textPaint
         )
+
+        // Tactical Minimap Radar (Top-Right, clear of pause button & controls)
+        fillPaint.color = Color.argb(160, 10, 15, 24)
+        canvas.drawCircle(radarCx, radarCy, radarR, fillPaint)
+        strokePaint.color = Color.argb(155, 56, 189, 248)
+        strokePaint.strokeWidth = 1.2f * density
+        canvas.drawCircle(radarCx, radarCy, radarR, strokePaint)
+        strokePaint.color = Color.argb(65, 148, 163, 184)
+        strokePaint.strokeWidth = 0.8f * density
+        canvas.drawCircle(radarCx, radarCy, radarR * 0.5f, strokePaint)
+
+        // Player look cone & center dot
+        val cYaw = cos(hud.playerYaw)
+        val sYaw = sin(hud.playerYaw)
+        val radarRange = 40f
+        if (hud.objRelX < 5000f) {
+            val rx = hud.objRelX * cYaw + hud.objRelZ * sYaw
+            val rz = -hud.objRelX * sYaw + hud.objRelZ * cYaw
+            val scale = (radarR - 4f * density) / radarRange
+            var px = rx * scale
+            var py = rz * scale
+            val d = hypot(px, py)
+            val maxD = radarR - 4f * density
+            if (d > maxD && d > 0.01f) {
+                px = px / d * maxD
+                py = py / d * maxD
+            }
+            fillPaint.color = Color.rgb(56, 189, 248)
+            canvas.drawCircle(radarCx + px, radarCy + py, 3.2f * density, fillPaint)
+        }
+        for (i in 0 until hud.radarCount) {
+            val ex = hud.radarEnemies[i * 3 + 0]
+            val ez = hud.radarEnemies[i * 3 + 1]
+            val eType = hud.radarEnemies[i * 3 + 2].toInt()
+            val rx = ex * cYaw + ez * sYaw
+            val rz = -ex * sYaw + ez * cYaw
+            val px = (rx / radarRange) * (radarR - 3f * density)
+            val py = (rz / radarRange) * (radarR - 3f * density)
+            if (hypot(px, py) <= radarR - 2f * density) {
+                fillPaint.color = when (eType) {
+                    1 -> Color.rgb(34, 211, 238) // Scout
+                    2 -> Color.rgb(239, 68, 68)  // Enforcer
+                    else -> Color.rgb(249, 115, 22) // Trooper
+                }
+                canvas.drawCircle(radarCx + px, radarCy + py, 2.6f * density, fillPaint)
+            }
+        }
+        fillPaint.color = Color.WHITE
+        canvas.drawCircle(radarCx, radarCy, 2.2f * density, fillPaint)
 
         // Pause Button (Top-Right)
         fillPaint.color = Color.argb(165, 15, 23, 42)
@@ -510,6 +603,13 @@ class TouchController(
 
         fillPaint.color = Color.argb(145, 12, 16, 22)
         canvas.drawRoundRect(RectF(rx - 168f * density, by - 55f * density, rx + 4f * density, by + 4f * density), 6f * density, 6f * density, fillPaint)
+
+        // Slot dots (1..4) on top-left of weapon panel
+        for (slot in 0 until 4) {
+            fillPaint.color = if (slot == hud.weaponSlot) Color.rgb(245, 158, 11) else Color.argb(110, 100, 116, 139)
+            canvas.drawRect(rx - 160f * density + slot * 14f * density, by - 46f * density,
+                            rx - 150f * density + slot * 14f * density, by - 41f * density, fillPaint)
+        }
 
         rightTextPaint.color = Color.rgb(245, 158, 11)
         rightTextPaint.textSize = 11.5f * density

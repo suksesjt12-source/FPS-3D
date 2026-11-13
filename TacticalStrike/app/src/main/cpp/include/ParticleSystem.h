@@ -44,6 +44,7 @@ public:
     void clear();
 
     void spawnMuzzleFlash(const Vec3& pos, const Vec3& dir);
+    void spawnTracer(const Vec3& start, const Vec3& end, const Vec4& color);
     void spawnImpactSparks(const Vec3& pos, const Vec3& normal, int count = 10);
     void spawnBloodBurst(const Vec3& pos, const Vec3& normal, int count = 10);
     void spawnExplosion(const Vec3& pos);

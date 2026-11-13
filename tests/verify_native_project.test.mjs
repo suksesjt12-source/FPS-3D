@@ -109,7 +109,20 @@ test('Every asset path referenced in C++ exists in app/src/main/assets', () => {
 test('All glTF 2.0 models and binary buffers are structurally valid', () => {
   const modelsDir = path.join(ASSETS, 'models');
   const gltfs = fs.readdirSync(modelsDir).filter((f) => f.endsWith('.gltf'));
-  assert.ok(gltfs.length >= 8, 'Expected 8 glTF models');
+  assert.ok(gltfs.length >= 12, `Expected at least 12 glTF models, got ${gltfs.length}`);
+
+  for (const requiredMdl of [
+    'enemy_trooper.gltf',
+    'enemy_scout.gltf',
+    'enemy_enforcer.gltf',
+    'weapon_m4a1.gltf',
+    'weapon_mp7.gltf',
+    'weapon_m870.gltf',
+    'weapon_usp45.gltf',
+    'viewmodel_arms.gltf',
+  ]) {
+    assert.ok(gltfs.includes(requiredMdl), `Missing upgraded model: ${requiredMdl}`);
+  }
 
   for (const f of gltfs) {
     const gltf = JSON.parse(fs.readFileSync(path.join(modelsDir, f), 'utf8'));
@@ -126,9 +139,9 @@ test('All glTF 2.0 models and binary buffers are structurally valid', () => {
     for (const acc of gltf.accessors) {
       assert.ok(acc.bufferView >= 0 && acc.bufferView < gltf.bufferViews.length, `Invalid accessor bufferView in ${f}`);
     }
-    if (f === 'enemy_trooper.gltf') {
-      assert.ok(gltf.skins.length === 1 && gltf.skins[0].joints.length === 8);
-      assert.ok(gltf.animations.length === 5, 'Expected 5 skeletal animation clips');
+    if (f.startsWith('enemy_')) {
+      assert.ok(gltf.skins.length === 1 && gltf.skins[0].joints.length === 12, `Expected 12-bone rig in ${f}`);
+      assert.ok(gltf.animations.length === 6, `Expected 6 skeletal animation clips in ${f}`);
     }
   }
 });
@@ -136,7 +149,7 @@ test('All glTF 2.0 models and binary buffers are structurally valid', () => {
 test('All KTX1 ETC2 textures have valid headers and mipmap sizes', () => {
   const texDir = path.join(ASSETS, 'textures');
   const ktxs = fs.readdirSync(texDir).filter((f) => f.endsWith('.ktx'));
-  assert.ok(ktxs.length >= 13);
+  assert.ok(ktxs.length >= 18, `Expected at least 18 KTX textures, got ${ktxs.length}`);
   const magic = Buffer.from([0xAB, 0x4B, 0x54, 0x58, 0x20, 0x31, 0x31, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A]);
 
   for (const f of ktxs) {
@@ -306,6 +319,7 @@ test('Default touch controls do not overlap each other or HUD panels across land
     const pauseRect = [w - 64, 14, w - 16, 52];
 
     const entries = Object.entries(controls).filter(([k]) => k !== 'interact');
+    const radar = { cx: w - 108, cy: 40, r: 28 };
     for (const [k, c] of entries) {
       const cx = c.xNorm * w;
       const cy = c.yNorm * h;
@@ -313,6 +327,7 @@ test('Default touch controls do not overlap each other or HUD panels across land
       assert.ok(!circleIntersectsRect(cx, cy, c.radius, ...weaponRect), `${k} overlaps weapon HUD at ${w}x${h}`);
       assert.ok(!circleIntersectsRect(cx, cy, c.radius, ...objectiveRect), `${k} overlaps objective HUD at ${w}x${h}`);
       assert.ok(!circleIntersectsRect(cx, cy, c.radius, ...pauseRect), `${k} overlaps pause button at ${w}x${h}`);
+      assert.ok(Math.hypot(cx - radar.cx, cy - radar.cy) >= c.radius + radar.r, `${k} overlaps radar at ${w}x${h}`);
     }
 
     for (let i = 0; i < entries.length; i++) {
@@ -325,4 +340,20 @@ test('Default touch controls do not overlap each other or HUD panels across land
     }
   }
 });
+
+test('Realistic skeletal animation blending, bullet tracers, and weapon skins are wired in engine', () => {
+  const aiCpp = fs.readFileSync(path.join(CPP, 'EnemyAI.cpp'), 'utf8');
+  assert.ok(aiCpp.includes('evaluateBlended'), 'EnemyAI must blend skeletal animation clips smoothly');
+  assert.ok(aiCpp.includes('spawnTracer'), 'EnemyAI must emit visible bullet tracers');
+
+  const weaponCpp = fs.readFileSync(path.join(CPP, 'WeaponSystem.cpp'), 'utf8');
+  assert.ok(weaponCpp.includes('M870-BREACH'), 'WeaponSystem must include M870-BREACH shotgun');
+  assert.ok(weaponCpp.includes('spawnTracer'), 'WeaponSystem must emit bullet tracers');
+  assert.ok(weaponCpp.includes('getArmsViewmodelMatrix'), 'WeaponSystem must position first-person gloved arms');
+
+  const rendererCpp = fs.readFileSync(path.join(CPP, 'Renderer.cpp'), 'utf8');
+  assert.ok(rendererCpp.includes('getWeaponSkinTex'), 'Renderer must apply selectable weapon skin texture');
+  assert.ok(rendererCpp.includes('getArmsModel'), 'Renderer must render first-person tactical gloved arms');
+});
+
 
