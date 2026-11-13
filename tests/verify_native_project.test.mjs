@@ -222,7 +222,13 @@ test('Android resources are minSdk-24 safe (styles-v28 & mipmap PNG fallbacks)',
   }
 });
 
-test('Both GitHub Actions APK workflows accept SDK licenses and build with Gradle 8.7 directly', () => {
+test('Gradle release signingConfig and both GitHub Actions APK workflows are complete and SIGPIPE-safe', () => {
+  const appGradle = fs.readFileSync(path.join(ROOT, 'app/build.gradle.kts'), 'utf8');
+  assert.ok(appGradle.includes('signingConfigs'), 'Missing signingConfigs in app/build.gradle.kts');
+  for (const envVar of ['KEYSTORE_FILE', 'KEYSTORE_PASSWORD', 'KEY_ALIAS', 'KEY_PASSWORD']) {
+    assert.ok(appGradle.includes(envVar), `Missing ${envVar} in app/build.gradle.kts`);
+  }
+
   const workflows = [
     path.resolve('.github/workflows/android.yml'),
     path.join(ROOT, '.github/workflows/android.yml'),
@@ -230,13 +236,28 @@ test('Both GitHub Actions APK workflows accept SDK licenses and build with Gradl
   for (const wf of workflows) {
     assert.ok(fs.existsSync(wf), `Missing workflow: ${wf}`);
     const yaml = fs.readFileSync(wf, 'utf8');
-    assert.ok(yaml.includes('sdkmanager --licenses'), `Missing sdkmanager --licenses in ${wf}`);
+    assert.ok(yaml.includes('actions/setup-java@v4'), `Missing setup-java in ${wf}`);
+    assert.ok(yaml.includes('android-actions/setup-android@v3'), `Missing setup-android in ${wf}`);
+    assert.ok(yaml.includes('gradle/actions/setup-gradle@v4'), `Missing setup-gradle in ${wf}`);
+    assert.ok(yaml.includes('ANDROID_HOME='), `Missing ANDROID_HOME export in ${wf}`);
+    assert.ok(yaml.includes('ANDROID_SDK_ROOT='), `Missing ANDROID_SDK_ROOT export in ${wf}`);
+    assert.ok(yaml.includes('ANDROID_NDK_HOME='), `Missing ANDROID_NDK_HOME export in ${wf}`);
+    assert.ok(yaml.includes('CMAKE_HOME='), `Missing CMAKE_HOME export in ${wf}`);
+    assert.ok(yaml.includes('GITHUB_ENV'), `Missing GITHUB_ENV writes in ${wf}`);
+    assert.ok(yaml.includes('GITHUB_PATH'), `Missing GITHUB_PATH writes in ${wf}`);
+    assert.ok(yaml.includes('sdkmanager'), `Missing sdkmanager license acceptance in ${wf}`);
     assert.ok(yaml.includes('set +o pipefail'), `Missing pipefail guard for yes | sdkmanager in ${wf}`);
     assert.ok(!/yes\s*\|\s*sdkmanager\s+--install/.test(yaml), `Unsafe yes | sdkmanager --install in ${wf}`);
+    assert.ok(!/unzip\s+-l[^\n]*\|\s*grep\s+-q/.test(yaml), `Unsafe unzip -l | grep -q SIGPIPE in ${wf}`);
     assert.ok(yaml.includes('ndk;26.3.11579264'), `Missing NDK version in ${wf}`);
     assert.ok(yaml.includes('cmake;3.22.1'), `Missing CMake version in ${wf}`);
+    assert.ok(yaml.includes('KEYSTORE_BASE64'), `Missing KEYSTORE_BASE64 secret support in ${wf}`);
+    assert.ok(yaml.includes('keytool'), `Missing keytool fallback keystore generation in ${wf}`);
+    assert.ok(yaml.includes('apksigner'), `Missing apksigner verify check in ${wf}`);
     assert.ok(yaml.includes('gradle assembleDebug'), `Missing gradle assembleDebug in ${wf}`);
     assert.ok(yaml.includes('gradle assembleRelease'), `Missing gradle assembleRelease in ${wf}`);
+    assert.ok(yaml.includes('app-release.apk'), `Missing signed app-release.apk verification/upload in ${wf}`);
+    assert.ok(!yaml.includes('app-release-unsigned.apk'), `Workflow should produce signed app-release.apk, not unsigned APK in ${wf}`);
     assert.ok(!yaml.includes('./gradlew'), `Should invoke gradle directly instead of missing wrapper jar in ${wf}`);
   }
 });

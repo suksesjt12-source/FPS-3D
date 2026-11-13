@@ -7,12 +7,25 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+env:
+  JAVA_VERSION: '17'
+  ANDROID_COMPILE_SDK: '34'
+  ANDROID_BUILD_TOOLS_VERSION: '34.0.0'
+  ANDROID_NDK_VERSION: '26.3.11579264'
+  ANDROID_CMAKE_VERSION: '3.22.1'
+  GRADLE_VERSION: '8.7'
+  GRADLE_OPTS: '-Dorg.gradle.daemon=false -Dorg.gradle.workers.max=2'
+
 jobs:
   build-apk:
-    name: Compile Native C++ Engine & Build APK
+    name: Compile Native C++ Engine & Build Signed APK
     runs-on: ubuntu-latest
     defaults:
       run:
+        shell: bash
         working-directory: TacticalStrike
 
     steps:
@@ -23,7 +36,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: ${{ env.JAVA_VERSION }}
 
       - name: Set up Android SDK, NDK 26.3.11579264 & CMake 3.22.1
         uses: android-actions/setup-android@v3
@@ -35,31 +48,135 @@ jobs:
             ndk;26.3.11579264
             cmake;3.22.1
 
-      - name: Verify Android SDK Licenses, NDK & CMake
+      - name: Configure Android SDK, NDK & CMake Environment Variables
         run: |
-          SDK_ROOT="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          NDK_DIR="${SDK_ROOT}/ndk/${ANDROID_NDK_VERSION}"
+          CMAKE_DIR="${SDK_ROOT}/cmake/${ANDROID_CMAKE_VERSION}"
+          BUILD_TOOLS_DIR="${SDK_ROOT}/build-tools/${ANDROID_BUILD_TOOLS_VERSION}"
+
+          {
+            echo "ANDROID_HOME=${SDK_ROOT}"
+            echo "ANDROID_SDK_ROOT=${SDK_ROOT}"
+            echo "ANDROID_NDK_HOME=${NDK_DIR}"
+            echo "ANDROID_NDK_ROOT=${NDK_DIR}"
+            echo "CMAKE_HOME=${CMAKE_DIR}"
+            echo "ANDROID_BUILD_TOOLS_DIR=${BUILD_TOOLS_DIR}"
+          } >> "${GITHUB_ENV}"
+
+          {
+            echo "${SDK_ROOT}/cmdline-tools/latest/bin"
+            echo "${SDK_ROOT}/platform-tools"
+            echo "${BUILD_TOOLS_DIR}"
+            echo "${CMAKE_DIR}/bin"
+          } >> "${GITHUB_PATH}"
+
+          SDKMANAGER_BIN="$(command -v sdkmanager || echo "${SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager")"
           set +o pipefail
-          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+          yes | "${SDKMANAGER_BIN}" --licenses >/dev/null 2>&1 || true
           set -o pipefail
-          test -f "${SDK_ROOT}/ndk/26.3.11579264/source.properties"
-          test -x "${SDK_ROOT}/cmake/3.22.1/bin/cmake"
+
+          java -version
+          test -d "${SDK_ROOT}/platforms/android-${ANDROID_COMPILE_SDK}"
+          test -f "${NDK_DIR}/source.properties"
+          test -x "${CMAKE_DIR}/bin/cmake"
+          test -x "${BUILD_TOOLS_DIR}/apksigner"
+          "${CMAKE_DIR}/bin/cmake" --version
 
       - name: Set up Gradle 8.7
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.7'
+          gradle-version: ${{ env.GRADLE_VERSION }}
+
+      - name: Prepare Release Signing Keystore
+        env:
+          SECRET_KEYSTORE_B64: ${{ secrets.KEYSTORE_BASE64 }}
+          SECRET_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          SECRET_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          SECRET_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          KEYSTORE_PATH="${RUNNER_TEMP}/tacticalstrike-release.keystore"
+
+          if [[ -n "${SECRET_KEYSTORE_B64}" ]]; then
+            if [[ -z "${SECRET_KEYSTORE_PASSWORD}" || -z "${SECRET_KEY_ALIAS}" ]]; then
+              echo "::error::KEYSTORE_BASE64 is configured, but KEYSTORE_PASSWORD or KEY_ALIAS secret is missing."
+              exit 1
+            fi
+            RESOLVED_KEY_PASS="${SECRET_KEY_PASSWORD:-${SECRET_KEYSTORE_PASSWORD}}"
+
+            echo "::add-mask::${SECRET_KEYSTORE_PASSWORD}"
+            echo "::add-mask::${RESOLVED_KEY_PASS}"
+
+            printf '%s' "${SECRET_KEYSTORE_B64}" | tr -d '\r\n ' | base64 --decode > "${KEYSTORE_PATH}"
+            RESOLVED_ALIAS="${SECRET_KEY_ALIAS}"
+            RESOLVED_STORE_PASS="${SECRET_KEYSTORE_PASSWORD}"
+            echo "Using repository signing keystore from GitHub Secrets (alias=${RESOLVED_ALIAS})."
+          else
+            RESOLVED_ALIAS="tacticalstrike_ci"
+            RESOLVED_STORE_PASS="$(openssl rand -hex 16)"
+            RESOLVED_KEY_PASS="${RESOLVED_STORE_PASS}"
+
+            echo "::add-mask::${RESOLVED_STORE_PASS}"
+            echo "::add-mask::${RESOLVED_KEY_PASS}"
+
+            KEYTOOL_BIN="$(command -v keytool || echo "${JAVA_HOME}/bin/keytool")"
+            "${KEYTOOL_BIN}" -genkeypair -v \
+              -keystore "${KEYSTORE_PATH}" \
+              -storetype PKCS12 \
+              -alias "${RESOLVED_ALIAS}" \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -storepass "${RESOLVED_STORE_PASS}" \
+              -keypass "${RESOLVED_KEY_PASS}" \
+              -dname "CN=TacticalStrike ZeroHour, OU=Engineering, O=TacticalStrike, L=Jakarta, ST=Jakarta, C=ID" \
+              -noprompt
+
+            echo "::notice::KEYSTORE_BASE64 secret not set; generated an ephemeral PKCS12 keystore so the release APK is validly signed for testing. Add KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS, and KEY_PASSWORD secrets for production distribution."
+          fi
+
+          test -s "${KEYSTORE_PATH}"
+          chmod 600 "${KEYSTORE_PATH}"
+
+          {
+            echo "KEYSTORE_FILE=${KEYSTORE_PATH}"
+            echo "ANDROID_KEYSTORE_PATH=${KEYSTORE_PATH}"
+            echo "KEYSTORE_PASSWORD=${RESOLVED_STORE_PASS}"
+            echo "KEY_ALIAS=${RESOLVED_ALIAS}"
+            echo "KEY_PASSWORD=${RESOLVED_KEY_PASS}"
+          } >> "${GITHUB_ENV}"
 
       - name: Build Debug APK (arm64-v8a + armeabi-v7a)
         run: gradle assembleDebug --no-daemon --stacktrace
 
-      - name: Build Release Unsigned APK
+      - name: Build Signed Release APK (arm64-v8a + armeabi-v7a)
         run: gradle assembleRelease --no-daemon --stacktrace
 
-      - name: Verify Native Libraries inside APK
+      - name: Verify Native Libraries & APK Signature
         run: |
-          APK_FILES="$(unzip -l app/build/outputs/apk/debug/app-debug.apk)"
-          echo "${APK_FILES}" | grep "lib/arm64-v8a/libtacticalstrike.so"
-          echo "${APK_FILES}" | grep "lib/armeabi-v7a/libtacticalstrike.so"
+          set -euo pipefail
+          DEBUG_APK="app/build/outputs/apk/debug/app-debug.apk"
+          RELEASE_APK="app/build/outputs/apk/release/app-release.apk"
+
+          test -f "${DEBUG_APK}"
+          test -f "${RELEASE_APK}"
+
+          for APK in "${DEBUG_APK}" "${RELEASE_APK}"; do
+            APK_FILES="$(unzip -l "${APK}")"
+            echo "${APK_FILES}" | grep "lib/arm64-v8a/libtacticalstrike.so"
+            echo "${APK_FILES}" | grep "lib/armeabi-v7a/libtacticalstrike.so"
+            echo "${APK_FILES}" | grep "lib/arm64-v8a/libc++_shared.so"
+            echo "${APK_FILES}" | grep "lib/armeabi-v7a/libc++_shared.so"
+          done
+
+          "${ANDROID_BUILD_TOOLS_DIR}/apksigner" verify --verbose --print-certs "${RELEASE_APK}"
+          ls -lh "${DEBUG_APK}" "${RELEASE_APK}"
+
+      - name: Clean Up Temporary Signing Keystore
+        if: always()
+        run: rm -f "${RUNNER_TEMP}/tacticalstrike-release.keystore"
 
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
@@ -68,9 +185,9 @@ jobs:
           path: TacticalStrike/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
-      - name: Upload Release Unsigned APK Artifact
+      - name: Upload Signed Release APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: TacticalStrike-ZeroHour-release-unsigned-apk
-          path: TacticalStrike/app/build/outputs/apk/release/app-release-unsigned.apk
+          name: TacticalStrike-ZeroHour-release-signed-apk
+          path: TacticalStrike/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error

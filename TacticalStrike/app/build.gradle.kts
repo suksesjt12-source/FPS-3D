@@ -30,8 +30,36 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            val keystorePath = System.getenv("KEYSTORE_FILE")
+                ?: System.getenv("ANDROID_KEYSTORE_PATH")
+            val keystorePass = System.getenv("KEYSTORE_PASSWORD")
+            val alias = System.getenv("KEY_ALIAS")
+            val keyPass = System.getenv("KEY_PASSWORD") ?: keystorePass
+
+            if (!keystorePath.isNullOrBlank() &&
+                !keystorePass.isNullOrBlank() &&
+                !alias.isNullOrBlank() &&
+                !keyPass.isNullOrBlank()
+            ) {
+                val ksFile = file(keystorePath)
+                if (ksFile.exists()) {
+                    storeFile = ksFile
+                    storePassword = keystorePass
+                    keyAlias = alias
+                    keyPassword = keyPass
+                }
+            }
+        }
+    }
+
     buildTypes {
         release {
+            val releaseSigning = signingConfigs.getByName("release")
+            if (releaseSigning.storeFile?.exists() == true) {
+                signingConfig = releaseSigning
+            }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
