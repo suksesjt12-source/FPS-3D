@@ -79,9 +79,12 @@ bool NativeRenderer::initEgl(ANativeWindow* window) {
     eglQuerySurface(eglDisplay_, eglSurface_, EGL_WIDTH, &surfaceWidth_);
     eglQuerySurface(eglDisplay_, eglSurface_, EGL_HEIGHT, &surfaceHeight_);
 
+    const char* glVendor = reinterpret_cast<const char*>(glGetString(GL_VENDOR));
+    const char* glRenderer = reinterpret_cast<const char*>(glGetString(GL_RENDERER));
     TS_LOGI("NativeRenderer: EGL OpenGL ES 3.0 ready (%dx%d), vendor=%s, renderer=%s",
             surfaceWidth_, surfaceHeight_,
-            glGetString(GL_VENDOR), glGetString(GL_RENDERER));
+            glVendor ? glVendor : "unknown",
+            glRenderer ? glRenderer : "unknown");
     return true;
 }
 

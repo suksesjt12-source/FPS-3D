@@ -1,6 +1,7 @@
 #include "GameEngine.h"
 #include "AssetLoader.h"
 #include <algorithm>
+#include <cmath>
 #include <thread>
 
 namespace ts {

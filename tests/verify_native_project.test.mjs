@@ -231,6 +231,8 @@ test('Both GitHub Actions APK workflows accept SDK licenses and build with Gradl
     assert.ok(fs.existsSync(wf), `Missing workflow: ${wf}`);
     const yaml = fs.readFileSync(wf, 'utf8');
     assert.ok(yaml.includes('sdkmanager --licenses'), `Missing sdkmanager --licenses in ${wf}`);
+    assert.ok(yaml.includes('set +o pipefail'), `Missing pipefail guard for yes | sdkmanager in ${wf}`);
+    assert.ok(!/yes\s*\|\s*sdkmanager\s+--install/.test(yaml), `Unsafe yes | sdkmanager --install in ${wf}`);
     assert.ok(yaml.includes('ndk;26.3.11579264'), `Missing NDK version in ${wf}`);
     assert.ok(yaml.includes('cmake;3.22.1'), `Missing CMake version in ${wf}`);
     assert.ok(yaml.includes('gradle assembleDebug'), `Missing gradle assembleDebug in ${wf}`);
