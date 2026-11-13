@@ -1,0 +1,7 @@
+{
+  "weapons": {
+    "m4a1": { "equipTime": 0.25, "reloadTime": 1.75, "recoilKick": 0.045, "adsTransition": 0.12 },
+    "mp7":  { "equipTime": 0.20, "reloadTime": 1.45, "recoilKick": 0.032, "adsTransition": 0.10 },
+    "usp45": { "equipTime": 0.18, "reloadTime": 1.25, "recoilKick": 0.055, "adsTransition": 0.09 }
+  }
+}

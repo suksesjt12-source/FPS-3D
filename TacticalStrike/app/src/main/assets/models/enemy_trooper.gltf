@@ -1,0 +1,647 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "TacticalStrikeAssetPipeline"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [
+        0,
+        8
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "root",
+      "children": [
+        1
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "pelvis",
+      "children": [
+        2,
+        6,
+        7
+      ],
+      "translation": [
+        0,
+        0.85,
+        0
+      ]
+    },
+    {
+      "name": "torso",
+      "children": [
+        3,
+        4,
+        5
+      ],
+      "translation": [
+        0,
+        0.25,
+        0
+      ]
+    },
+    {
+      "name": "head",
+      "translation": [
+        0,
+        0.38,
+        0
+      ]
+    },
+    {
+      "name": "armL",
+      "translation": [
+        -0.33,
+        0.22,
+        0
+      ]
+    },
+    {
+      "name": "armR",
+      "translation": [
+        0.33,
+        0.22,
+        0
+      ]
+    },
+    {
+      "name": "legL",
+      "translation": [
+        -0.12,
+        -0.05,
+        0
+      ]
+    },
+    {
+      "name": "legR",
+      "translation": [
+        0.12,
+        -0.05,
+        0
+      ]
+    },
+    {
+      "name": "trooper_mesh",
+      "mesh": 0,
+      "skin": 0
+    }
+  ],
+  "skins": [
+    {
+      "inverseBindMatrices": 6,
+      "joints": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "enemy_trooper",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4
+          },
+          "indices": 5,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "name": "trooper_mat",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.85,
+          0.88,
+          0.85,
+          1
+        ],
+        "metallicFactor": 0.25,
+        "roughnessFactor": 0.65,
+        "baseColorTexture": {
+          "index": 0
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "textures": [
+    {
+      "source": 0
+    },
+    {
+      "source": 1
+    }
+  ],
+  "images": [
+    {
+      "uri": "textures/enemy_albedo.ktx"
+    },
+    {
+      "uri": "textures/enemy_normal.ktx"
+    }
+  ],
+  "animations": [
+    {
+      "name": "idle",
+      "samplers": [
+        {
+          "input": 7,
+          "output": 8,
+          "interpolation": "LINEAR"
+        },
+        {
+          "input": 7,
+          "output": 9,
+          "interpolation": "LINEAR"
+        }
+      ],
+      "channels": [
+        {
+          "sampler": 0,
+          "target": {
+            "node": 2,
+            "path": "translation"
+          }
+        },
+        {
+          "sampler": 1,
+          "target": {
+            "node": 5,
+            "path": "rotation"
+          }
+        }
+      ]
+    },
+    {
+      "name": "walk",
+      "samplers": [
+        {
+          "input": 10,
+          "output": 11,
+          "interpolation": "LINEAR"
+        },
+        {
+          "input": 10,
+          "output": 12,
+          "interpolation": "LINEAR"
+        },
+        {
+          "input": 10,
+          "output": 13,
+          "interpolation": "LINEAR"
+        },
+        {
+          "input": 10,
+          "output": 14,
+          "interpolation": "LINEAR"
+        }
+      ],
+      "channels": [
+        {
+          "sampler": 0,
+          "target": {
+            "node": 6,
+            "path": "rotation"
+          }
+        },
+        {
+          "sampler": 1,
+          "target": {
+            "node": 7,
+            "path": "rotation"
+          }
+        },
+        {
+          "sampler": 2,
+          "target": {
+            "node": 4,
+            "path": "rotation"
+          }
+        },
+        {
+          "sampler": 3,
+          "target": {
+            "node": 5,
+            "path": "rotation"
+          }
+        }
+      ]
+    },
+    {
+      "name": "run",
+      "samplers": [
+        {
+          "input": 15,
+          "output": 16,
+          "interpolation": "LINEAR"
+        },
+        {
+          "input": 15,
+          "output": 17,
+          "interpolation": "LINEAR"
+        },
+        {
+          "input": 15,
+          "output": 18,
+          "interpolation": "LINEAR"
+        }
+      ],
+      "channels": [
+        {
+          "sampler": 0,
+          "target": {
+            "node": 6,
+            "path": "rotation"
+          }
+        },
+        {
+          "sampler": 1,
+          "target": {
+            "node": 7,
+            "path": "rotation"
+          }
+        },
+        {
+          "sampler": 2,
+          "target": {
+            "node": 2,
+            "path": "rotation"
+          }
+        }
+      ]
+    },
+    {
+      "name": "shoot",
+      "samplers": [
+        {
+          "input": 19,
+          "output": 20,
+          "interpolation": "LINEAR"
+        },
+        {
+          "input": 19,
+          "output": 21,
+          "interpolation": "LINEAR"
+        }
+      ],
+      "channels": [
+        {
+          "sampler": 0,
+          "target": {
+            "node": 5,
+            "path": "rotation"
+          }
+        },
+        {
+          "sampler": 1,
+          "target": {
+            "node": 2,
+            "path": "rotation"
+          }
+        }
+      ]
+    },
+    {
+      "name": "death",
+      "samplers": [
+        {
+          "input": 22,
+          "output": 23,
+          "interpolation": "LINEAR"
+        },
+        {
+          "input": 22,
+          "output": 24,
+          "interpolation": "LINEAR"
+        }
+      ],
+      "channels": [
+        {
+          "sampler": 0,
+          "target": {
+            "node": 1,
+            "path": "translation"
+          }
+        },
+        {
+          "sampler": 1,
+          "target": {
+            "node": 1,
+            "path": "rotation"
+          }
+        }
+      ]
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "enemy_trooper.bin",
+      "byteLength": 11972
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 2304
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 2304,
+      "byteLength": 2304
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 4608,
+      "byteLength": 1536
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 6144,
+      "byteLength": 768
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 6912,
+      "byteLength": 3072
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 9984,
+      "byteLength": 576
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 10560,
+      "byteLength": 512
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 11072,
+      "byteLength": 12
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 11084,
+      "byteLength": 36
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 11120,
+      "byteLength": 48
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 11168,
+      "byteLength": 20
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 11188,
+      "byteLength": 80
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 11268,
+      "byteLength": 80
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 11348,
+      "byteLength": 80
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 11428,
+      "byteLength": 80
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 11508,
+      "byteLength": 20
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 11528,
+      "byteLength": 80
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 11608,
+      "byteLength": 80
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 11688,
+      "byteLength": 80
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 11768,
+      "byteLength": 12
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 11780,
+      "byteLength": 48
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 11828,
+      "byteLength": 48
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 11876,
+      "byteLength": 12
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 11888,
+      "byteLength": 36
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 11924,
+      "byteLength": 48
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 192,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 192,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 192,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5121,
+      "count": 192,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 192,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 288,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 6,
+      "componentType": 5126,
+      "count": 8,
+      "type": "MAT4"
+    },
+    {
+      "bufferView": 7,
+      "componentType": 5126,
+      "count": 3,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 8,
+      "componentType": 5126,
+      "count": 3,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 9,
+      "componentType": 5126,
+      "count": 3,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 10,
+      "componentType": 5126,
+      "count": 5,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 11,
+      "componentType": 5126,
+      "count": 5,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 12,
+      "componentType": 5126,
+      "count": 5,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 13,
+      "componentType": 5126,
+      "count": 5,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 14,
+      "componentType": 5126,
+      "count": 5,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 15,
+      "componentType": 5126,
+      "count": 5,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 16,
+      "componentType": 5126,
+      "count": 5,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 17,
+      "componentType": 5126,
+      "count": 5,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 18,
+      "componentType": 5126,
+      "count": 5,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 19,
+      "componentType": 5126,
+      "count": 3,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 20,
+      "componentType": 5126,
+      "count": 3,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 21,
+      "componentType": 5126,
+      "count": 3,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 22,
+      "componentType": 5126,
+      "count": 3,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 23,
+      "componentType": 5126,
+      "count": 3,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 24,
+      "componentType": 5126,
+      "count": 3,
+      "type": "VEC4"
+    }
+  ]
+}

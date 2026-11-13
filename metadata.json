@@ -1,0 +1,6 @@
+{
+  "name": "Tactical Strike: Zero Hour",
+  "description": "Native Android 3D Tactical FPS built with Kotlin, C++17, OpenGL ES 3.0, EGL, JNI, Android NDK, and CMake.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

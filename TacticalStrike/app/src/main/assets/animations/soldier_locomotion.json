@@ -1,0 +1,10 @@
+{
+  "skeleton": "enemy_trooper",
+  "clips": {
+    "idle": { "loop": true, "speed": 1.0, "blendIn": 0.15 },
+    "walk": { "loop": true, "speed": 1.1, "blendIn": 0.12 },
+    "run":  { "loop": true, "speed": 1.35, "blendIn": 0.10 },
+    "shoot": { "loop": true, "speed": 1.0, "blendIn": 0.06 },
+    "death": { "loop": false, "speed": 1.0, "blendIn": 0.08 }
+  }
+}

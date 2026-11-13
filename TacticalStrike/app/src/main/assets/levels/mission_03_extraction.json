@@ -1,0 +1,67 @@
+{
+  "name": "ZERO HOUR EXTRACTION",
+  "briefing": "Night assault on the command compound. Secure the cipher node, eliminate elite guards, and extract.",
+  "playerSpawn": [0.0, 0.0, 26.0],
+  "playerYaw": 0.0,
+  "skyTop": [0.02, 0.04, 0.10],
+  "skyHorizon": [0.12, 0.16, 0.25],
+  "sunDirection": [0.40, -0.75, -0.52],
+  "sunColor": [0.65, 0.78, 1.0],
+  "sunIntensity": 1.75,
+  "ambientColor": [0.16, 0.19, 0.27],
+  "fogColor": [0.09, 0.12, 0.19],
+  "fogDensity": 0.013,
+  "pointLights": [
+    { "pos": [-8.0, 4.0, 10.0], "color": [1.0, 0.60, 0.20], "intensity": 3.8, "radius": 13.0 },
+    { "pos": [8.0, 4.0, -4.0], "color": [0.25, 0.85, 1.0], "intensity": 4.0, "radius": 14.0 },
+    { "pos": [0.0, 4.0, -24.0], "color": [0.20, 0.95, 0.45], "intensity": 4.2, "radius": 15.0 }
+  ],
+  "blocks": [
+    { "center": [0.0, -0.5, 0.0], "half": [36.0, 0.5, 38.0], "material": "ground", "uvScale": 0.18, "solid": true },
+    { "center": [0.0, 4.0, -37.0], "half": [36.0, 4.0, 1.0], "material": "concrete", "uvScale": 0.25, "solid": true },
+    { "center": [0.0, 4.0, 37.0], "half": [36.0, 4.0, 1.0], "material": "concrete", "uvScale": 0.25, "solid": true },
+    { "center": [-35.0, 4.0, 0.0], "half": [1.0, 4.0, 37.0], "material": "concrete", "uvScale": 0.25, "solid": true },
+    { "center": [35.0, 4.0, 0.0], "half": [1.0, 4.0, 37.0], "material": "concrete", "uvScale": 0.25, "solid": true },
+
+    { "center": [-12.0, 2.8, 10.0], "half": [4.0, 2.8, 3.0], "material": "concrete", "uvScale": 0.25, "solid": true },
+    { "center": [12.0, 2.8, 10.0], "half": [4.0, 2.8, 3.0], "material": "concrete", "uvScale": 0.25, "solid": true },
+    { "center": [0.0, 2.4, 2.0], "half": [3.5, 2.4, 1.4], "material": "metal", "uvScale": 0.3, "solid": true },
+    { "center": [-14.0, 3.0, -10.0], "half": [3.5, 3.0, 4.0], "material": "metal", "tint": [0.45, 0.50, 0.55], "uvScale": 0.3, "solid": true },
+    { "center": [14.0, 3.0, -10.0], "half": [3.5, 3.0, 4.0], "material": "metal", "tint": [0.45, 0.50, 0.55], "uvScale": 0.3, "solid": true },
+    { "center": [0.0, 0.15, -27.0], "half": [6.0, 0.15, 6.0], "material": "metal", "tint": [0.25, 0.85, 0.45], "uvScale": 0.35, "solid": true }
+  ],
+  "props": [
+    { "kind": "barrier", "pos": [-3.0, 0.0, 17.0], "yaw": 0.0 },
+    { "kind": "barrier", "pos": [3.0, 0.0, 17.0], "yaw": 0.0 },
+    { "kind": "crate", "pos": [-6.5, 0.0, 7.0], "yaw": 0.4 },
+    { "kind": "crate", "pos": [6.5, 0.0, 7.0], "yaw": -0.4 },
+    { "kind": "terminal", "pos": [0.0, 0.0, -8.0], "yaw": 0.0 },
+    { "kind": "barrier", "pos": [-5.0, 0.0, -16.0], "yaw": 0.2 },
+    { "kind": "barrier", "pos": [5.0, 0.0, -16.0], "yaw": -0.2 }
+  ],
+  "checkpoints": [
+    { "pos": [0.0, 0.0, 13.0], "radius": 4.0 },
+    { "pos": [0.0, 0.0, -12.0], "radius": 4.0 }
+  ],
+  "pickups": [
+    { "kind": "armor", "pos": [-5.5, 0.0, 14.0] },
+    { "kind": "ammo", "pos": [5.5, 0.0, 14.0] },
+    { "kind": "health", "pos": [-5.0, 0.0, -12.0] },
+    { "kind": "ammo", "pos": [5.0, 0.0, -12.0] }
+  ],
+  "objectives": [
+    { "type": "hack", "title": "DECRYPT COMMAND CIPHER NODE", "pos": [0.0, 0.0, -8.0], "radius": 4.0, "holdTime": 4.0 },
+    { "type": "eliminate", "title": "NEUTRALIZE EXTRACTION SQUAD", "pos": [0.0, 0.0, -22.0], "radius": 5.0 },
+    { "type": "reach", "title": "BOARD EVAC HELIPAD", "pos": [0.0, 0.0, -27.0], "radius": 4.8 }
+  ],
+  "enemies": [
+    { "type": "scout", "pos": [-7.0, 0.0, 12.0], "yaw": 3.14, "patrol": [[-7.0, 0.0, 12.0], [-2.0, 0.0, 8.0]] },
+    { "type": "rifleman", "pos": [7.0, 0.0, 12.0], "yaw": 3.14, "patrol": [[7.0, 0.0, 12.0], [2.0, 0.0, 8.0]] },
+    { "type": "enforcer", "pos": [0.0, 0.0, -3.0], "yaw": 3.14, "patrol": [[-5.0, 0.0, -3.0], [5.0, 0.0, -3.0]] },
+    { "type": "rifleman", "pos": [-8.0, 0.0, -10.0], "yaw": 2.9, "patrol": [[-8.0, 0.0, -10.0], [-4.0, 0.0, -14.0]] },
+    { "type": "rifleman", "pos": [8.0, 0.0, -10.0], "yaw": 3.3, "patrol": [[8.0, 0.0, -10.0], [4.0, 0.0, -14.0]] },
+    { "type": "scout", "pos": [-6.0, 0.0, -20.0], "yaw": 3.14, "patrol": [[-6.0, 0.0, -20.0], [-1.0, 0.0, -22.0]] },
+    { "type": "enforcer", "pos": [4.0, 0.0, -23.0], "yaw": 3.14, "patrol": [[4.0, 0.0, -23.0], [-2.0, 0.0, -25.0]] },
+    { "type": "enforcer", "pos": [0.0, 0.0, -29.0], "yaw": 3.14, "patrol": [[-4.0, 0.0, -29.0], [4.0, 0.0, -29.0]] }
+  ]
+}

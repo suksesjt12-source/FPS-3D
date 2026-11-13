@@ -1,0 +1,14 @@
+{
+  "defaultLayout": {
+    "joystick": { "x": 0.14, "y": 0.72, "radiusDp": 64 },
+    "sprint":   { "x": 0.14, "y": 0.43, "radiusDp": 28 },
+    "fire":     { "x": 0.84, "y": 0.68, "radiusDp": 44 },
+    "aim":      { "x": 0.73, "y": 0.52, "radiusDp": 32 },
+    "reload":   { "x": 0.72, "y": 0.78, "radiusDp": 28 },
+    "jump":     { "x": 0.92, "y": 0.48, "radiusDp": 28 },
+    "crouch":   { "x": 0.83, "y": 0.88, "radiusDp": 27 },
+    "weapon":   { "x": 0.93, "y": 0.28, "radiusDp": 28 },
+    "grenade":  { "x": 0.64, "y": 0.86, "radiusDp": 27 },
+    "interact": { "x": 0.50, "y": 0.72, "radiusDp": 32 }
+  }
+}

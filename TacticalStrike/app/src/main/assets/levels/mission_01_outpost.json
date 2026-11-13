@@ -1,0 +1,73 @@
+{
+  "name": "OPERATION IRON CURTAIN",
+  "briefing": "Infiltrate the forward desert outpost, hack the tactical relay terminal, and clear the extraction pad.",
+  "playerSpawn": [0.0, 0.0, 22.0],
+  "playerYaw": 0.0,
+  "skyTop": [0.07, 0.14, 0.26],
+  "skyHorizon": [0.46, 0.36, 0.28],
+  "sunDirection": [-0.45, -0.78, -0.42],
+  "sunColor": [1.0, 0.88, 0.72],
+  "sunIntensity": 2.4,
+  "ambientColor": [0.22, 0.24, 0.28],
+  "fogColor": [0.38, 0.32, 0.27],
+  "fogDensity": 0.011,
+  "pointLights": [
+    { "pos": [0.0, 3.8, 0.0], "color": [0.25, 0.82, 1.0], "intensity": 3.5, "radius": 11.0 },
+    { "pos": [-10.0, 4.2, -16.0], "color": [1.0, 0.58, 0.20], "intensity": 3.2, "radius": 12.0 },
+    { "pos": [10.0, 4.2, -16.0], "color": [1.0, 0.58, 0.20], "intensity": 3.2, "radius": 12.0 }
+  ],
+  "blocks": [
+    { "center": [0.0, -0.5, 0.0], "half": [34.0, 0.5, 36.0], "material": "ground", "uvScale": 0.18, "solid": true },
+    { "center": [0.0, 3.5, -35.0], "half": [34.0, 3.5, 1.0], "material": "concrete", "uvScale": 0.25, "solid": true },
+    { "center": [0.0, 3.5, 35.0], "half": [34.0, 3.5, 1.0], "material": "concrete", "uvScale": 0.25, "solid": true },
+    { "center": [-33.0, 3.5, 0.0], "half": [1.0, 3.5, 35.0], "material": "concrete", "uvScale": 0.25, "solid": true },
+    { "center": [33.0, 3.5, 0.0], "half": [1.0, 3.5, 35.0], "material": "concrete", "uvScale": 0.25, "solid": true },
+
+    { "center": [-9.0, 2.2, 8.0], "half": [4.5, 2.2, 1.2], "material": "concrete", "uvScale": 0.3, "solid": true },
+    { "center": [9.0, 2.2, 8.0], "half": [4.5, 2.2, 1.2], "material": "concrete", "uvScale": 0.3, "solid": true },
+
+    { "center": [-14.0, 2.6, -4.0], "half": [3.0, 2.6, 4.0], "material": "metal", "tint": [0.42, 0.52, 0.58], "uvScale": 0.35, "solid": true },
+    { "center": [14.0, 2.6, -4.0], "half": [3.0, 2.6, 4.0], "material": "metal", "tint": [0.58, 0.44, 0.36], "uvScale": 0.35, "solid": true },
+
+    { "center": [0.0, 0.2, 0.0], "half": [4.0, 0.2, 4.0], "material": "concrete", "uvScale": 0.4, "solid": true },
+    { "center": [-10.0, 2.8, -18.0], "half": [4.5, 2.8, 2.0], "material": "concrete", "uvScale": 0.25, "solid": true },
+    { "center": [10.0, 2.8, -18.0], "half": [4.5, 2.8, 2.0], "material": "concrete", "uvScale": 0.25, "solid": true },
+
+    { "center": [0.0, 0.15, -26.0], "half": [5.5, 0.15, 5.5], "material": "metal", "tint": [0.85, 0.72, 0.28], "uvScale": 0.35, "solid": true }
+  ],
+  "props": [
+    { "kind": "barrier", "pos": [-3.0, 0.0, 14.0], "yaw": 0.0 },
+    { "kind": "barrier", "pos": [3.0, 0.0, 14.0], "yaw": 0.0 },
+    { "kind": "crate", "pos": [-5.5, 0.0, 4.0], "yaw": 0.35 },
+    { "kind": "crate", "pos": [5.5, 0.0, 4.0], "yaw": -0.35 },
+    { "kind": "terminal", "pos": [0.0, 0.4, 0.0], "yaw": 0.0 },
+    { "kind": "barrier", "pos": [-4.0, 0.0, -11.0], "yaw": 0.2 },
+    { "kind": "barrier", "pos": [4.0, 0.0, -11.0], "yaw": -0.2 },
+    { "kind": "crate", "pos": [-7.5, 0.0, -22.0], "yaw": 0.0 },
+    { "kind": "crate", "pos": [7.5, 0.0, -22.0], "yaw": 0.5 }
+  ],
+  "checkpoints": [
+    { "pos": [0.0, 0.0, 11.0], "radius": 4.0 },
+    { "pos": [0.0, 0.0, -10.0], "radius": 4.0 }
+  ],
+  "pickups": [
+    { "kind": "ammo", "pos": [-5.5, 0.0, 12.0] },
+    { "kind": "armor", "pos": [5.5, 0.0, 12.0] },
+    { "kind": "health", "pos": [-6.5, 0.0, -9.0] },
+    { "kind": "ammo", "pos": [6.5, 0.0, -9.0] }
+  ],
+  "objectives": [
+    { "type": "hack", "title": "HACK COURTYARD RELAY TERMINAL", "pos": [0.0, 0.4, 0.0], "radius": 4.0, "holdTime": 3.5 },
+    { "type": "eliminate", "title": "ELIMINATE REMAINING GARRISON", "pos": [0.0, 0.0, -18.0], "radius": 5.0 },
+    { "type": "reach", "title": "SECURE NORTH EXTRACTION PAD", "pos": [0.0, 0.0, -26.0], "radius": 4.5 }
+  ],
+  "enemies": [
+    { "type": "scout", "pos": [-6.0, 0.0, 5.0], "yaw": 3.14, "patrol": [[-6.0, 0.0, 5.0], [-2.0, 0.0, 2.0]] },
+    { "type": "rifleman", "pos": [6.0, 0.0, 5.0], "yaw": 3.14, "patrol": [[6.0, 0.0, 5.0], [2.0, 0.0, 2.0]] },
+    { "type": "rifleman", "pos": [-9.0, 0.0, -6.0], "yaw": 2.9, "patrol": [[-9.0, 0.0, -6.0], [-3.0, 0.0, -6.0]] },
+    { "type": "rifleman", "pos": [9.0, 0.0, -6.0], "yaw": 3.3, "patrol": [[9.0, 0.0, -6.0], [3.0, 0.0, -6.0]] },
+    { "type": "scout", "pos": [0.0, 0.0, -14.0], "yaw": 3.14, "patrol": [[-4.0, 0.0, -14.0], [4.0, 0.0, -14.0]] },
+    { "type": "enforcer", "pos": [-3.0, 0.0, -23.0], "yaw": 3.14, "patrol": [[-3.0, 0.0, -23.0], [3.0, 0.0, -23.0]] },
+    { "type": "rifleman", "pos": [5.0, 0.0, -24.0], "yaw": 3.14, "patrol": [[5.0, 0.0, -24.0], [1.0, 0.0, -21.0]] }
+  ]
+}
