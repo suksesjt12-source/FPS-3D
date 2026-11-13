@@ -22,43 +22,47 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Android SDK & NDK
+      - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install Android NDK 26.3.11579264 & CMake 3.22.1
+      - name: Accept SDK Licenses & Install NDK 26.3.11579264 + CMake 3.22.1
         run: |
-          sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "ndk;26.3.11579264" "cmake;3.22.1"
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+          yes | sdkmanager --install \
+            "platform-tools" \
+            "platforms;android-34" \
+            "build-tools;34.0.0" \
+            "ndk;26.3.11579264" \
+            "cmake;3.22.1"
+          test -f "${ANDROID_HOME}/ndk/26.3.11579264/source.properties"
+          test -x "${ANDROID_HOME}/cmake/3.22.1/bin/cmake"
 
-      - name: Set up Gradle
+      - name: Set up Gradle 8.7
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.7'
 
-      - name: Ensure gradlew is executable & wrapper jar exists
-        run: |
-          chmod +x gradlew
-          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
-            gradle wrapper --gradle-version 8.7
-          fi
-
       - name: Build Debug APK (arm64-v8a + armeabi-v7a)
-        run: ./gradlew assembleDebug --stacktrace
+        run: gradle assembleDebug --no-daemon --stacktrace
 
       - name: Build Release Unsigned APK
-        run: ./gradlew assembleRelease --stacktrace
+        run: gradle assembleRelease --no-daemon --stacktrace
 
       - name: Verify Native Libraries inside APK
         run: |
-          unzip -l app/build/outputs/apk/debug/app-debug.apk | grep -E "lib/(arm64-v8a|armeabi-v7a)/libtacticalstrike.so"
+          unzip -l app/build/outputs/apk/debug/app-debug.apk | grep -q "lib/arm64-v8a/libtacticalstrike.so"
+          unzip -l app/build/outputs/apk/debug/app-debug.apk | grep -q "lib/armeabi-v7a/libtacticalstrike.so"
 
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: TacticalStrike-ZeroHour-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
 
       - name: Upload Release Unsigned APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: TacticalStrike-ZeroHour-release-unsigned-apk
           path: app/build/outputs/apk/release/app-release-unsigned.apk
+          if-no-files-found: error

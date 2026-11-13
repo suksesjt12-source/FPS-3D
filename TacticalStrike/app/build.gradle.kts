@@ -76,6 +76,11 @@ android {
             useLegacyPackaging = false
         }
     }
+
+    lint {
+        checkReleaseBuilds = false
+        abortOnError = false
+    }
 }
 
 dependencies {

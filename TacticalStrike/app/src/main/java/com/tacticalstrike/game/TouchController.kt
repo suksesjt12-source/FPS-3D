@@ -13,6 +13,7 @@ import kotlin.math.cos
 import kotlin.math.hypot
 import kotlin.math.min
 import kotlin.math.sin
+import java.util.Locale
 
 class TouchController(
     context: Context,
@@ -452,7 +453,7 @@ class TouchController(
         textPaint.color = Color.argb(230, 226, 232, 240)
         textPaint.textSize = 13f * density
         canvas.drawText(
-            "HOSTILES: ${hud.enemiesAlive}   |   KILLS: ${hud.kills}   |   %02d:%02d   |   %d FPS".format(mins, secs, hud.fps),
+            String.format(Locale.US, "HOSTILES: %d   |   KILLS: %d   |   %02d:%02d   |   %d FPS", hud.enemiesAlive, hud.kills, mins, secs, hud.fps),
             w * 0.5f,
             30f * density,
             textPaint

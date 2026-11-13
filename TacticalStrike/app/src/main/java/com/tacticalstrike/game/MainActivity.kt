@@ -21,13 +21,14 @@ import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.SeekBar
-import android.widget.Switch
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SwitchCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import java.util.Locale
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
 
@@ -174,6 +175,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
 
     private fun applyImmersiveMode() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            window.attributes.layoutInDisplayCutoutMode =
+                WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+        }
         WindowCompat.setDecorFitsSystemWindows(window, false)
         val controller = WindowInsetsControllerCompat(window, window.decorView)
         controller.hide(WindowInsetsCompat.Type.systemBars())
@@ -361,7 +366,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val mins = (hudState.elapsedSec / 60f).toInt()
         val secs = (hudState.elapsedSec % 60f).toInt()
         card.addView(TextView(this).apply {
-            text = "TIME: %02d:%02d   |   HOSTILES ELIMINATED: ${hudState.kills}".format(mins, secs)
+            text = String.format(Locale.US, "TIME: %02d:%02d   |   HOSTILES ELIMINATED: %d", mins, secs, hudState.kills)
             setTextColor(Color.WHITE)
             textSize = 13f
             gravity = Gravity.CENTER
@@ -414,7 +419,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
 
         fun addToggle(label: String, checked: Boolean, onToggle: (Boolean) -> Unit) {
-            val sw = Switch(this).apply {
+            val sw = SwitchCompat(this).apply {
                 text = label
                 setTextColor(Color.WHITE)
                 isChecked = checked

@@ -200,3 +200,41 @@ test('All GLSL ES 3.0 shaders have valid version, precision, and main()', () => 
     assert.ok(/void\s+main\s*\(\s*\)/.test(src), `Missing main() in ${f}`);
   }
 });
+
+test('Android resources are minSdk-24 safe (styles-v28 & mipmap PNG fallbacks)', () => {
+  const baseStyles = fs.readFileSync(path.join(MAIN, 'res/values/styles.xml'), 'utf8');
+  assert.ok(!baseStyles.includes('windowLayoutInDisplayCutoutMode'),
+    'Base values/styles.xml must not contain API 28 windowLayoutInDisplayCutoutMode');
+
+  const v28StylesPath = path.join(MAIN, 'res/values-v28/styles.xml');
+  assert.ok(fs.existsSync(v28StylesPath), 'Missing values-v28/styles.xml');
+  const v28Styles = fs.readFileSync(v28StylesPath, 'utf8');
+  assert.ok(v28Styles.includes('windowLayoutInDisplayCutoutMode'));
+
+  const pngMagic = Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+  for (const bucket of ['mipmap-mdpi', 'mipmap-hdpi', 'mipmap-xhdpi', 'mipmap-xxhdpi', 'mipmap-xxxhdpi']) {
+    for (const icon of ['ic_launcher.png', 'ic_launcher_round.png']) {
+      const p = path.join(MAIN, 'res', bucket, icon);
+      assert.ok(fs.existsSync(p), `Missing fallback icon ${bucket}/${icon}`);
+      const buf = fs.readFileSync(p);
+      assert.ok(buf.subarray(0, 8).equals(pngMagic), `Invalid PNG signature in ${bucket}/${icon}`);
+    }
+  }
+});
+
+test('Both GitHub Actions APK workflows accept SDK licenses and build with Gradle 8.7 directly', () => {
+  const workflows = [
+    path.resolve('.github/workflows/android.yml'),
+    path.join(ROOT, '.github/workflows/android.yml'),
+  ];
+  for (const wf of workflows) {
+    assert.ok(fs.existsSync(wf), `Missing workflow: ${wf}`);
+    const yaml = fs.readFileSync(wf, 'utf8');
+    assert.ok(yaml.includes('sdkmanager --licenses'), `Missing sdkmanager --licenses in ${wf}`);
+    assert.ok(yaml.includes('ndk;26.3.11579264'), `Missing NDK version in ${wf}`);
+    assert.ok(yaml.includes('cmake;3.22.1'), `Missing CMake version in ${wf}`);
+    assert.ok(yaml.includes('gradle assembleDebug'), `Missing gradle assembleDebug in ${wf}`);
+    assert.ok(yaml.includes('gradle assembleRelease'), `Missing gradle assembleRelease in ${wf}`);
+    assert.ok(!yaml.includes('./gradlew'), `Should invoke gradle directly instead of missing wrapper jar in ${wf}`);
+  }
+});
