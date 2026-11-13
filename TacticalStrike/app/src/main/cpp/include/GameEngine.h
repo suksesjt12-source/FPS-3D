@@ -88,6 +88,9 @@ private:
     bool appPaused_ = false;
     bool missionLoaded_ = false;
     bool missionRecorded_ = false;
+    int pendingMissionStart_ = -1;
+
+    void loadMissionOnGlThread(int missionIndex);
 
     NativeRenderer renderer_;
     CameraSystem camera_;

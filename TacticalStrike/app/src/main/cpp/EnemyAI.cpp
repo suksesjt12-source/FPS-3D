@@ -79,7 +79,7 @@ void EnemyAI::update(float dt,
             case EnemyAIState::Patrol: {
                 if (canSeePlayer) {
                     e.state = EnemyAIState::Alert;
-                    e.stateTimer = 0.35f;
+                    e.stateTimer = 0.70f;
                     break;
                 }
                 if (!e.patrolPoints.empty()) {
@@ -105,6 +105,7 @@ void EnemyAI::update(float dt,
                 if (e.stateTimer <= 0.0f) {
                     e.state = EnemyAIState::Engage;
                     e.burstRemaining = 3 + static_cast<int>(rand01() * 3.0f);
+                    e.fireCooldown = std::max(e.fireCooldown, 0.35f + rand01() * 0.35f);
                 }
                 break;
             }
@@ -152,7 +153,7 @@ void EnemyAI::update(float dt,
                     audio.playSound(SoundId::RifleShot, clampf(1.0f - distToPlayer / 45.0f, 0.1f, 0.65f));
 
                     // Accuracy scales with distance & enemy type
-                    float hitProb = clampf(0.58f - distToPlayer * 0.012f, 0.12f, 0.62f);
+                    float hitProb = clampf(0.46f - distToPlayer * 0.014f, 0.08f, 0.48f);
                     if (rand01() < hitProb) {
                         float dmg = (e.type == EnemyType::Enforcer) ? 14.0f : 9.0f;
                         player.applyDamage(dmg, e.position);

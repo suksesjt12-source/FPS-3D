@@ -261,3 +261,68 @@ test('Gradle release signingConfig and both GitHub Actions APK workflows are com
     assert.ok(!yaml.includes('./gradlew'), `Should invoke gradle directly instead of missing wrapper jar in ${wf}`);
   }
 });
+
+test('TextureManager sets GL_TEXTURE_MAX_LEVEL and GL calls are confined to GL render thread', () => {
+  const texMgr = fs.readFileSync(path.join(CPP, 'TextureManager.cpp'), 'utf8');
+  assert.ok(texMgr.includes('GL_TEXTURE_MAX_LEVEL'), 'TextureManager must set GL_TEXTURE_MAX_LEVEL for truncated KTX mip chains');
+  assert.ok(texMgr.includes('GL_TEXTURE_BASE_LEVEL'), 'TextureManager must set GL_TEXTURE_BASE_LEVEL');
+
+  const engineCpp = fs.readFileSync(path.join(CPP, 'GameEngine.cpp'), 'utf8');
+  assert.ok(engineCpp.includes('pendingMissionStart_'), 'startMission must defer GL uploads to stepAndRender()');
+  assert.ok(engineCpp.includes('clearAll()'), 'onSurfaceDestroyed must release cached glTF models via clearAll()');
+
+  const rendererCpp = fs.readFileSync(path.join(CPP, 'Renderer.cpp'), 'utf8');
+  assert.ok(rendererCpp.includes('pendingFboRecreate_'), 'NativeRenderer must defer FBO recreation to renderFrame()');
+});
+
+test('Default touch controls do not overlap each other or HUD panels across landscape resolutions', () => {
+  const settingsKt = fs.readFileSync(path.join(KT_DIR, 'SettingsManager.kt'), 'utf8');
+  const posRegex = /"([a-z]+)"\s+to\s+ControlPos\(\s*([0-9.]+)f\s*,\s*([0-9.]+)f\s*,\s*([0-9.]+)f\s*\)/g;
+  const controls = {};
+  for (const m of settingsKt.matchAll(posRegex)) {
+    controls[m[1]] = { xNorm: parseFloat(m[2]), yNorm: parseFloat(m[3]), radius: parseFloat(m[4]) };
+  }
+  assert.ok(Object.keys(controls).length >= 10, 'Expected all 10 HUD controls');
+
+  const viewports = [
+    { w: 800, h: 360 },
+    { w: 915, h: 412 },
+    { w: 1280, h: 800 },
+  ];
+
+  const circleIntersectsRect = (cx, cy, r, rx1, ry1, rx2, ry2) => {
+    const nx = Math.max(rx1, Math.min(cx, rx2));
+    const ny = Math.max(ry1, Math.min(cy, ry2));
+    const dx = cx - nx;
+    const dy = cy - ny;
+    return dx * dx + dy * dy < r * r;
+  };
+
+  for (const vp of viewports) {
+    const { w, h } = vp;
+    const vitalsRect = [10, h - 66, 188, h - 10];
+    const weaponRect = [w - 184, h - 69, w - 12, h - 10];
+    const objectiveRect = [12, 10, 246, 58];
+    const pauseRect = [w - 64, 14, w - 16, 52];
+
+    const entries = Object.entries(controls).filter(([k]) => k !== 'interact');
+    for (const [k, c] of entries) {
+      const cx = c.xNorm * w;
+      const cy = c.yNorm * h;
+      assert.ok(!circleIntersectsRect(cx, cy, c.radius, ...vitalsRect), `${k} overlaps vitals at ${w}x${h}`);
+      assert.ok(!circleIntersectsRect(cx, cy, c.radius, ...weaponRect), `${k} overlaps weapon HUD at ${w}x${h}`);
+      assert.ok(!circleIntersectsRect(cx, cy, c.radius, ...objectiveRect), `${k} overlaps objective HUD at ${w}x${h}`);
+      assert.ok(!circleIntersectsRect(cx, cy, c.radius, ...pauseRect), `${k} overlaps pause button at ${w}x${h}`);
+    }
+
+    for (let i = 0; i < entries.length; i++) {
+      for (let j = i + 1; j < entries.length; j++) {
+        const [k1, a] = entries[i];
+        const [k2, b] = entries[j];
+        const dist = Math.hypot(a.xNorm * w - b.xNorm * w, a.yNorm * h - b.yNorm * h);
+        assert.ok(dist >= a.radius + b.radius, `${k1} overlaps ${k2} at ${w}x${h} (dist=${dist.toFixed(1)})`);
+      }
+    }
+  }
+});
+

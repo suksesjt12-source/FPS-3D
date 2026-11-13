@@ -80,6 +80,7 @@ public:
                      LightingSystem& lighting);
 
     void clear();
+    void clearAll();
     LevelData& getCurrentLevel() { return level_; }
     const LevelData& getCurrentLevel() const { return level_; }
     int getMissionCount() const { return 3; }

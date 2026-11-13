@@ -36,7 +36,9 @@ void GameEngine::onSurfaceCreated(ANativeWindow* window) {
         GLuint pAtlas = renderer_.getTextureManager().loadKtxTexture(assetMgr_, "textures/particle_atlas.ktx");
         particles_.init(pAtlas);
 
-        int idx = saveMgr_.getProgress().lastPlayedMission;
+        int idx = (pendingMissionStart_ >= 0) ? pendingMissionStart_ : saveMgr_.getProgress().lastPlayedMission;
+        bool startDirectly = (pendingMissionStart_ >= 0);
+        pendingMissionStart_ = -1;
         if (!missionLoaded_) {
             ModelLoader loader;
             if (levelMgr_.loadMission(idx, assetMgr_, renderer_.getTextureManager(),
@@ -44,7 +46,9 @@ void GameEngine::onSurfaceCreated(ANativeWindow* window) {
                                       collision_, enemies_, lighting_)) {
                 missionLoaded_ = true;
                 missionMgr_.startMission(levelMgr_.getCurrentLevel(), player_, weapons_);
-                missionMgr_.setState(MissionState::Menu);
+                if (!startDirectly) {
+                    missionMgr_.setState(MissionState::Menu);
+                }
             }
         }
     }
@@ -61,7 +65,7 @@ void GameEngine::onSurfaceDestroyed() {
     std::lock_guard<std::mutex> lock(mutex_);
     particles_.destroy();
     lighting_.destroy();
-    levelMgr_.clear();
+    levelMgr_.clearAll();
     missionLoaded_ = false;
     renderer_.detachWindow();
 }
@@ -87,8 +91,7 @@ void GameEngine::setAudioMuted(bool muted) {
     audio_.setMuted(muted);
 }
 
-void GameEngine::startMission(int missionIndex) {
-    std::lock_guard<std::mutex> lock(mutex_);
+void GameEngine::loadMissionOnGlThread(int missionIndex) {
     if (!assetMgr_ || !renderer_.isReady()) return;
     ModelLoader loader;
     if (levelMgr_.loadMission(missionIndex, assetMgr_, renderer_.getTextureManager(),
@@ -101,12 +104,18 @@ void GameEngine::startMission(int missionIndex) {
         saveMgr_.getProgress().lastPlayedMission = missionIndex;
         saveMgr_.save();
         inputMgr_.resetAll();
+        hasLastFrameTime_ = false;
     }
 }
 
+void GameEngine::startMission(int missionIndex) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    pendingMissionStart_ = std::max(0, std::min(2, missionIndex));
+}
+
 void GameEngine::restartMission() {
-    int idx = levelMgr_.getCurrentLevel().missionIndex;
-    startMission(idx);
+    std::lock_guard<std::mutex> lock(mutex_);
+    pendingMissionStart_ = levelMgr_.getCurrentLevel().missionIndex;
 }
 
 void GameEngine::respawnAtCheckpoint() {
@@ -149,7 +158,14 @@ void GameEngine::setGraphicsSettings(bool shadows, bool postProcess, float rende
 
 void GameEngine::stepAndRender() {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (appPaused_ || !renderer_.isReady() || !missionLoaded_) return;
+    if (appPaused_ || !renderer_.isReady()) return;
+
+    if (pendingMissionStart_ >= 0) {
+        int nextMission = pendingMissionStart_;
+        pendingMissionStart_ = -1;
+        loadMissionOnGlThread(nextMission);
+    }
+    if (!missionLoaded_) return;
 
     auto now = std::chrono::steady_clock::now();
     float dt = 0.016f;
@@ -195,7 +211,7 @@ void GameEngine::stepAndRender() {
         float angle = totalTimeSec_ * 0.14f;
         Vec3 focus = levelMgr_.getCurrentLevel().playerSpawn + Vec3{0, 2.0f, -6.0f};
         camera_.setPosition(focus + Vec3{std::sin(angle) * 14.0f, 6.5f, std::cos(angle) * 14.0f});
-        camera_.setAngles(angle, -0.32f);
+        camera_.setAngles(-angle, -0.32f);
         camera_.update(dt);
         lighting_.update(dt, focus);
     } else {
@@ -213,7 +229,8 @@ void GameEngine::stepAndRender() {
                           levelMgr_,
                           player_.getSpeedRatio(),
                           player_.getDamageFlash(),
-                          totalTimeSec_);
+                          totalTimeSec_,
+                          state != MissionState::Menu);
 
     // Optional frame pacing when targeting 30 FPS on mid-range thermal budgets
     if (renderer_.getSettings().targetFps <= 30) {

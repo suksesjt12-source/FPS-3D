@@ -51,17 +51,24 @@ class SettingsManager(context: Context) {
         set(v) = prefs.edit().putInt("target_fps", v).apply()
 
     private val defaultPositions = mapOf(
-        "joystick" to ControlPos(0.14f, 0.72f, 64f),
-        "sprint"   to ControlPos(0.14f, 0.43f, 28f),
-        "fire"     to ControlPos(0.84f, 0.68f, 44f),
-        "aim"      to ControlPos(0.73f, 0.52f, 32f),
-        "reload"   to ControlPos(0.72f, 0.78f, 28f),
-        "jump"     to ControlPos(0.92f, 0.48f, 28f),
-        "crouch"   to ControlPos(0.83f, 0.88f, 27f),
-        "weapon"   to ControlPos(0.93f, 0.28f, 28f),
-        "grenade"  to ControlPos(0.64f, 0.86f, 27f),
-        "interact" to ControlPos(0.50f, 0.72f, 32f)
+        "joystick" to ControlPos(0.13f, 0.52f, 52f),
+        "sprint"   to ControlPos(0.13f, 0.27f, 24f),
+        "fire"     to ControlPos(0.87f, 0.62f, 38f),
+        "aim"      to ControlPos(0.76f, 0.44f, 27f),
+        "reload"   to ControlPos(0.74f, 0.65f, 25f),
+        "jump"     to ControlPos(0.93f, 0.41f, 25f),
+        "crouch"   to ControlPos(0.65f, 0.85f, 25f),
+        "weapon"   to ControlPos(0.93f, 0.22f, 24f),
+        "grenade"  to ControlPos(0.64f, 0.64f, 25f),
+        "interact" to ControlPos(0.50f, 0.72f, 30f)
     )
+
+    init {
+        if (prefs.getInt("hud_layout_ver", 1) < 2) {
+            resetHudLayout()
+            prefs.edit().putInt("hud_layout_ver", 2).apply()
+        }
+    }
 
     fun getControlPosition(key: String): ControlPos {
         val def = defaultPositions[key] ?: ControlPos(0.5f, 0.5f, 28f)

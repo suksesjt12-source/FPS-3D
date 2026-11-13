@@ -36,6 +36,7 @@ int EnemySystem::spawnEnemy(EnemyType type, const Vec3& pos, float yawRad, const
                     e.maxHealth = 100.0f; e.armor = 20.0f; e.ammoInMag = 30; break;
             }
             e.health = e.maxHealth;
+            e.fireCooldown = 0.85f;
             return i;
         }
     }

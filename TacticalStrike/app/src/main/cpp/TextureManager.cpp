@@ -139,6 +139,11 @@ GLuint TextureManager::loadKtxTexture(AAssetManager* mgr, const std::string& pat
         height = std::max(1u, height >> 1);
     }
 
+    if (uploadedMips > 0) {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, static_cast<GLint>(uploadedMips - 1));
+    }
+
     if (uploadedMips == 1 && !isCompressed) {
         glGenerateMipmap(GL_TEXTURE_2D);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);

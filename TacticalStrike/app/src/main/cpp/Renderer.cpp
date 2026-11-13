@@ -206,7 +206,7 @@ void NativeRenderer::resize(int width, int height) {
     surfaceWidth_ = width;
     surfaceHeight_ = height;
     if (isReady()) {
-        recreatePostProcessFbo(width, height);
+        pendingFboRecreate_ = true;
     }
 }
 
@@ -222,6 +222,7 @@ void NativeRenderer::detachWindow() {
         texMgr_.clear();
     }
     glInitialized_ = false;
+    pendingFboRecreate_ = false;
     destroyEgl();
 }
 
@@ -229,7 +230,7 @@ void NativeRenderer::setSettings(const RenderSettings& settings) {
     bool scaleChanged = std::fabs(settings.renderScale - settings_.renderScale) > 0.02f;
     settings_ = settings;
     if (scaleChanged && isReady()) {
-        recreatePostProcessFbo(surfaceWidth_, surfaceHeight_);
+        pendingFboRecreate_ = true;
     }
 }
 
@@ -318,8 +319,14 @@ void NativeRenderer::renderFrame(const CameraSystem& camera,
                                  const LevelManager& levelMgr,
                                  float playerSpeedRatio,
                                  float damageFlash,
-                                 float timeSec) {
+                                 float timeSec,
+                                 bool drawViewmodel) {
     if (!isReady() || !glInitialized_) return;
+
+    if (pendingFboRecreate_) {
+        recreatePostProcessFbo(surfaceWidth_, surfaceHeight_);
+        pendingFboRecreate_ = false;
+    }
 
     const Vec3& camPos = camera.getPosition();
 
@@ -522,7 +529,7 @@ void NativeRenderer::renderFrame(const CameraSystem& camera,
 
     // 2e. First-Person Weapon Viewmodel (foreground depth range)
     auto weaponModel = levelMgr.getWeaponModel(weapons.getActiveSlot());
-    if (pbrStatic && weaponModel) {
+    if (drawViewmodel && pbrStatic && weaponModel) {
         glClear(GL_DEPTH_BUFFER_BIT);
         glUseProgram(pbrStatic);
         glUniformMatrix4fv(shaders_.getUniformLocation(pbrStatic, "uViewProj"),

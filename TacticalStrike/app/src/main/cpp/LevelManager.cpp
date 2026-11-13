@@ -12,6 +12,16 @@ void LevelManager::clear() {
     level_ = LevelData{};
 }
 
+void LevelManager::clearAll() {
+    clear();
+    enemyModel_.reset();
+    for (auto& w : weaponModels_) w.reset();
+    grenadeModel_.reset();
+    propCrate_.reset();
+    propBarrier_.reset();
+    propTerminal_.reset();
+}
+
 bool LevelManager::loadMission(int missionIndex,
                                AAssetManager* mgr,
                                TextureManager& texMgr,

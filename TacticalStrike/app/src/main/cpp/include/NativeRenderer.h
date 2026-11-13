@@ -45,7 +45,8 @@ public:
                      const LevelManager& levelMgr,
                      float playerSpeedRatio,
                      float damageFlash,
-                     float timeSec);
+                     float timeSec,
+                     bool drawViewmodel);
 
     TextureManager& getTextureManager() { return texMgr_; }
     bool isReady() const { return eglDisplay_ != EGL_NO_DISPLAY && eglSurface_ != EGL_NO_SURFACE && eglContext_ != EGL_NO_CONTEXT; }
@@ -84,6 +85,7 @@ private:
     MeshPrimitive pickupBoxMesh_;
     MeshPrimitive beaconMesh_;
     bool glInitialized_ = false;
+    bool pendingFboRecreate_ = false;
 };
 
 } // namespace ts

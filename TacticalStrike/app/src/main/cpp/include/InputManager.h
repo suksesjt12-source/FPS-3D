@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Math3D.h"
+#include <mutex>
 
 namespace ts {
 
@@ -24,16 +25,16 @@ public:
     void setMoveAxis(float x, float y);
     void addLookDelta(float dx, float dy);
     void addGyroRate(float wx, float wy, float dt);
-    void setSprint(bool active) { state_.sprint = active; }
-    void setFire(bool active) { state_.fire = active; }
-    void setAim(bool active) { state_.aim = active; }
-    void toggleCrouch() { state_.crouch = !state_.crouch; }
-    void setCrouch(bool active) { state_.crouch = active; }
-    void triggerJump() { state_.jumpPressed = true; }
-    void triggerReload() { state_.reloadPressed = true; }
-    void triggerGrenade() { state_.grenadePressed = true; }
-    void triggerInteract() { state_.interactPressed = true; }
-    void requestWeaponSwitch(int slot) { state_.weaponSwitchReq = slot; }
+    void setSprint(bool active) { std::lock_guard<std::mutex> lk(mutex_); state_.sprint = active; }
+    void setFire(bool active) { std::lock_guard<std::mutex> lk(mutex_); state_.fire = active; }
+    void setAim(bool active) { std::lock_guard<std::mutex> lk(mutex_); state_.aim = active; }
+    void toggleCrouch() { std::lock_guard<std::mutex> lk(mutex_); state_.crouch = !state_.crouch; }
+    void setCrouch(bool active) { std::lock_guard<std::mutex> lk(mutex_); state_.crouch = active; }
+    void triggerJump() { std::lock_guard<std::mutex> lk(mutex_); state_.jumpPressed = true; }
+    void triggerReload() { std::lock_guard<std::mutex> lk(mutex_); state_.reloadPressed = true; }
+    void triggerGrenade() { std::lock_guard<std::mutex> lk(mutex_); state_.grenadePressed = true; }
+    void triggerInteract() { std::lock_guard<std::mutex> lk(mutex_); state_.interactPressed = true; }
+    void requestWeaponSwitch(int slot) { std::lock_guard<std::mutex> lk(mutex_); state_.weaponSwitchReq = slot; }
 
     void setSensitivity(float touchSens, float adsMult, float gyroSens, bool gyroEnabled, bool invertY);
 
@@ -41,6 +42,7 @@ public:
     void resetAll();
 
 private:
+    std::mutex mutex_;
     InputState state_;
     float touchSensitivity_ = 0.0032f;
     float adsMultiplier_ = 0.55f;

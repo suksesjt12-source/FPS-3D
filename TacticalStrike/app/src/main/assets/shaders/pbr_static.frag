@@ -89,7 +89,7 @@ vec3 evalLight(vec3 L, vec3 radiance, vec3 N, vec3 V, vec3 albedo, float metalli
 
 void main() {
     vec4 texSample = texture(uAlbedoTex, vUv);
-    vec3 albedo = pow(texSample.rgb * uBaseColor.rgb, vec3(2.2));
+    vec3 albedo = pow(texSample.rgb, vec3(2.2)) * uBaseColor.rgb;
     float roughness = clamp(uRoughness, 0.08, 0.98);
     float metallic = clamp(uMetallic, 0.0, 1.0);
 
@@ -115,7 +115,10 @@ void main() {
         }
     }
 
-    vec3 ambient = uAmbientColor * albedo * (1.0 - metallic * 0.45);
+    float hemi = N.y * 0.5 + 0.5;
+    vec3 skyEnv = mix(uAmbientColor * 0.85, uAmbientColor * 1.55 + vec3(0.08, 0.10, 0.14), hemi);
+    vec3 envF = fresnelSchlick(max(dot(N, V), 0.0), F0);
+    vec3 ambient = skyEnv * albedo * (1.0 - metallic * 0.35) + skyEnv * envF * mix(0.22, 0.78, 1.0 - roughness);
     vec3 color = ambient + Lo + uEmissive;
 
     // Exponential atmospheric fog
